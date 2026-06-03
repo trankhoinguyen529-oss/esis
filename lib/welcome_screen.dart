@@ -53,9 +53,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               width: double.infinity,
               decoration: const BoxDecoration(
                 color: Color(0xFFF3FFF8),
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(36),
-                ),
+                borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 0),
               child: SingleChildScrollView(
@@ -76,10 +74,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       controller: _usernameController,
                       keyboardType: TextInputType.emailAddress,
                       decoration: InputDecoration(
-                        hintText: 'example@example.com',
+                        hintText: 'Enter your username or email',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
                         filled: true,
                         fillColor: const Color(0xFFE6F8EE),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 18,
+                        ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
                           borderSide: BorderSide.none,
@@ -101,15 +103,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       obscureText: _obscurePassword,
                       decoration: InputDecoration(
                         hintText: 'Enter your password',
+                        hintStyle: TextStyle(color: Colors.grey[500]),
                         filled: true,
                         fillColor: const Color(0xFFE6F8EE),
-                        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 18),
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 18,
+                        ),
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
                             color: const Color(0xFF153B2C),
                           ),
-                          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
+                          onPressed: () => setState(
+                            () => _obscurePassword = !_obscurePassword,
+                          ),
                         ),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(30),
@@ -124,9 +134,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(
-                              builder: (context) => MyHomePage(title:'title'),
-                            ),
+                            MaterialPageRoute(builder: (context) => Home()),
                           );
                         },
                         style: ElevatedButton.styleFrom(
@@ -228,7 +236,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       children: [
                         Text(
                           "Don't have an account? ",
-                          style: TextStyle(color: Color(0xFF153B2C), fontSize: 14),
+                          style: TextStyle(
+                            color: Color(0xFF153B2C),
+                            fontSize: 14,
+                          ),
                         ),
                         GestureDetector(
                           onTap: () {
@@ -240,7 +251,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           },
                           child: Text(
                             'Sign Up',
-                            style: TextStyle(color: Color(0xFF167D5F), fontSize: 14, fontWeight: FontWeight.w700),
+                            style: TextStyle(
+                              color: Color(0xFF167D5F),
+                              fontSize: 14,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
                       ],
@@ -290,5 +305,3 @@ class _SocialButton extends StatelessWidget {
     );
   }
 }
-
-
