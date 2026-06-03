@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'services/auth_service.dart';
+import 'login_screen.dart';
+
 class Home extends StatefulWidget {
   const Home({super.key});
 
@@ -8,13 +11,46 @@ class Home extends StatefulWidget {
 }
 
 class _HomeState extends State<Home> {
+  final AuthService _authService = AuthService();
   int _selectedPeriod = 2; // 0: Daily, 1: Weekly, 2: Monthly
   int _selectedBottom = 0;
+
+  Future<void> _handleLogout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Text('Đăng xuất'),
+        content: const Text('Bạn có chắc chắn muốn đăng xuất?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(ctx).pop(false),
+            child: const Text('Hủy', style: TextStyle(color: Color(0xFF153B2C))),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(ctx).pop(true),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+            child: const Text('Đăng xuất', style: TextStyle(color: Colors.white)),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true) {
+      await _authService.signOut();
+      if (!mounted) return;
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final Color primary = const Color(0xFF00C18A);
     final Color surface = const Color(0xFFF3FFF8);
+    final user = _authService.currentUser;
+    final displayName = user?.displayName ?? user?.email ?? 'User';
 
     return Scaffold(
       backgroundColor: primary,
@@ -29,17 +65,17 @@ class _HomeState extends State<Home> {
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
+                      children: [
                         Text(
-                          'Hi, Welcome Back',
-                          style: TextStyle(
+                          'Hi, $displayName',
+                          style: const TextStyle(
                             color: Colors.black,
                             fontSize: 30,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 4),
-                        Text(
+                        const SizedBox(height: 4),
+                        const Text(
                           'Good Morning',
                           style: TextStyle(
                             color: Colors.black54,
@@ -50,16 +86,19 @@ class _HomeState extends State<Home> {
                       ],
                     ),
                   ),
-                  Container(
-                    width: 40,
-                    height: 40,
-                    decoration: BoxDecoration(
-                      color: surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.notifications_none,
-                      color: Colors.black87,
+                  GestureDetector(
+                    onTap: _handleLogout,
+                    child: Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.logout,
+                        color: Colors.black87,
+                      ),
                     ),
                   ),
                 ],

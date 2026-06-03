@@ -1,20 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
+import 'services/auth_service.dart';
 import 'createaccount_screen.dart';
+import 'email_verification_screen.dart';
 import 'home_screen.dart';
 
 class WelcomeScreen extends StatefulWidget {
-  Widget? nextPage;
-
-  WelcomeScreen({super.key});
+  const WelcomeScreen({super.key});
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
 }
 
 class _WelcomeScreenState extends State<WelcomeScreen> {
+  final AuthService _authService = AuthService();
   final TextEditingController _usernameController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isLoading = false;
 
   @override
   void dispose() {
@@ -28,6 +32,130 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     super.initState();
     _usernameController.addListener(() => setState(() {}));
     _passwordController.addListener(() => setState(() {}));
+  }
+
+  /// Xử lý đăng nhập với Firebase
+  Future<void> _handleLogin() async {
+    final email = _usernameController.text.trim();
+    final password = _passwordController.text;
+
+    if (email.isEmpty || password.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Vui lòng nhập email và mật khẩu'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      await _authService.signInWithEmail(email, password);
+      final verified = await _authService.isEmailVerified();
+      if (!mounted) return;
+
+      if (verified) {
+        // Email đã verify → vào Home
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (_) => const Home()),
+          (route) => false,
+        );
+      } else {
+        // Email chưa verify → hiện dialog
+        _showEmailNotVerifiedDialog(email);
+      }
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      String message;
+      switch (e.code) {
+        case 'user-not-found':
+          message = 'Không tìm thấy tài khoản';
+          break;
+        case 'wrong-password':
+          message = 'Mật khẩu không đúng';
+          break;
+        case 'invalid-credential':
+          message = 'Email hoặc mật khẩu không đúng';
+          break;
+        case 'invalid-email':
+          message = 'Email không hợp lệ';
+          break;
+        default:
+          message = 'Đã xảy ra lỗi: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã xảy ra lỗi: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Dialog thông báo email chưa xác thực
+  void _showEmailNotVerifiedDialog(String email) {
+    showDialog(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: const [
+            Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 28),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Email chưa xác thực',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+              ),
+            ),
+          ],
+        ),
+        content: const Text(
+          'Bạn cần xác thực email trước khi đăng nhập. Vui lòng kiểm tra hộp thư của bạn.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              _authService.signOut();
+            },
+            child: const Text(
+              'Đóng',
+              style: TextStyle(color: Color(0xFF153B2C)),
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.of(ctx).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => EmailVerificationScreen(email: email),
+                ),
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF00C18A),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text(
+              'Xác thực ngay',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   @override
@@ -132,25 +260,32 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.of(context).pushReplacement(
-                            MaterialPageRoute(builder: (context) => Home()),
-                          );
-                        },
+                        onPressed: _isLoading ? null : _handleLogin,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00C18A),
+                          disabledBackgroundColor:
+                              const Color(0xFF00C18A).withOpacity(0.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text(
-                          'Log In',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                'Log In',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -167,50 +302,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    // SizedBox(
-                    //   width: double.infinity,
-                    //   height: 56,
-                    //   child: OutlinedButton(
-                    //    onPressed: () {
-                    //       Navigator.of(context).push(
-                    //         MaterialPageRoute(
-                    //           builder: (context) => CreateAccountScreen(),
-                    //         ),
-                    //       );
-                    //     },
-                    //     style: OutlinedButton.styleFrom(
-                    //       backgroundColor: const Color(0xFFE7F8EE),
-                    //       shape: RoundedRectangleBorder(
-                    //         borderRadius: BorderRadius.circular(30),
-                    //       ),
-                    //       side: BorderSide.none,
-                    //     ),
-                    //     child: const Text(
-                    //       'Sign Up',
-                    //       style: TextStyle(
-                    //         fontSize: 20,
-                    //         fontWeight: FontWeight.w700,
-                    //         color: Color(0xFF153B2C),
-                    //       ),
-                    //     ),
-                    //   ),
-                    // ),
                     const SizedBox(height: 24),
-                    const Center(
-                      // child: Text.rich(
-                      //   TextSpan(
-                      //     text: 'Use ',
-                      //     style: TextStyle(color: Color(0xFF153B2C), fontSize: 14),
-                      //     children: [
-                      //       TextSpan(
-                      //         text: 'Fingerprint',
-                      //         style: TextStyle(color: Color(0xFF167D5F), fontWeight: FontWeight.w700),
-                      //       ),
-                      //       TextSpan(text: ' To Access'),
-                      //     ],
-                      //   ),
-                      // ),
-                    ),
+                    const Center(),
                     const SizedBox(height: 120),
                     const Center(
                       child: Text(
@@ -224,9 +317,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     const SizedBox(height: 18),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
+                      children: const [
                         _SocialButton(icon: Icons.facebook),
-                        const SizedBox(width: 18),
+                        SizedBox(width: 18),
                         _SocialButton(icon: Icons.g_mobiledata),
                       ],
                     ),
@@ -234,7 +327,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
+                        const Text(
                           "Don't have an account? ",
                           style: TextStyle(
                             color: Color(0xFF153B2C),
@@ -245,11 +338,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                           onTap: () {
                             Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (context) => CreateAccountScreen(),
+                                builder: (context) =>
+                                    const CreateAccountScreen(),
                               ),
                             );
                           },
-                          child: Text(
+                          child: const Text(
                             'Sign Up',
                             style: TextStyle(
                               color: Color(0xFF167D5F),
@@ -261,21 +355,6 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ],
                     ),
                     const SizedBox(height: 20),
-                    // if (_usernameController.text.isNotEmpty || _passwordController.text.isNotEmpty)
-                    //   Column(
-                    //     crossAxisAlignment: CrossAxisAlignment.start,
-                    //     children: [
-                    //       const SizedBox(height: 20),
-                    //       const Text(
-                    //         'Entered values',
-                    //         style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                    //       ),
-                    //       const SizedBox(height: 8),
-                    //       Text('Username: ${_usernameController.text}'),
-                    //       const SizedBox(height: 6),
-                    //       Text('Password: ${_passwordController.text}'),
-                    //     ],
-                    //   ),
                   ],
                 ),
               ),
@@ -297,8 +376,8 @@ class _SocialButton extends StatelessWidget {
     return Container(
       width: 56,
       height: 56,
-      decoration: BoxDecoration(
-        color: const Color(0xFFE7F8EE),
+      decoration: const BoxDecoration(
+        color: Color(0xFFE7F8EE),
         shape: BoxShape.circle,
       ),
       child: Icon(icon, color: const Color(0xFF153B2C), size: 28),
