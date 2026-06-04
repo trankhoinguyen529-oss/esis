@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
+import 'services/auth_service.dart';
+import 'email_verification_screen.dart';
 import 'welcome_screen.dart';
 
 class CreateAccountScreen extends StatefulWidget {
@@ -11,6 +14,7 @@ class CreateAccountScreen extends StatefulWidget {
 }
 
 class _CreateAccountScreenState extends State<CreateAccountScreen> {
+  final AuthService _authService = AuthService();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _mobileController = TextEditingController();
@@ -21,6 +25,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   final FocusNode _passwordFocusNode = FocusNode();
   bool _obscurePassword = true;
   bool _obscureConfirm = true;
+  bool _isLoading = false;
   bool _nameError = false;
   bool _emailError = false;
   bool _mobileError = false;
@@ -52,6 +57,113 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     super.dispose();
   }
 
+  /// Validate form trước khi đăng ký
+  bool _validateForm() {
+    setState(() {
+      _nameError = _nameController.text.trim().isEmpty;
+      _emailError = _emailController.text.trim().isEmpty;
+      _mobileError = _mobileController.text.trim().isEmpty;
+      _dobError = _dobController.text.trim().isEmpty;
+      _passwordError = _passwordController.text.trim().isEmpty;
+      _confirmPasswordError =
+          _confirmPasswordController.text.trim().isEmpty;
+      _passwordMismatch = !_passwordError &&
+          !_confirmPasswordError &&
+          _passwordController.text != _confirmPasswordController.text;
+    });
+
+    return !_nameError &&
+        !_emailError &&
+        !_mobileError &&
+        !_dobError &&
+        !_passwordError &&
+        !_confirmPasswordError &&
+        !_passwordMismatch;
+  }
+
+  /// Xử lý đăng ký với Firebase
+  Future<void> _handleSignUp() async {
+    if (!_validateForm()) return;
+
+    // Kiểm tra email hợp lệ
+    final email = _emailController.text.trim();
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Email không hợp lệ'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Kiểm tra mật khẩu đủ mạnh
+    if (!_passwordHasUpper || !_passwordHasNumber || !_passwordHasLength) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Mật khẩu chưa đáp ứng yêu cầu'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      final password = _passwordController.text;
+
+      // 1. Đăng ký tài khoản
+      final credential =
+          await _authService.registerWithEmail(email, password);
+
+      // 2. Cập nhật displayName
+      await credential.user
+          ?.updateDisplayName(_nameController.text.trim());
+
+      // 3. Gửi email xác thực
+      await _authService.sendEmailVerification();
+
+      if (!mounted) return;
+
+      // 4. Navigate đến Email Verification Screen
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) => EmailVerificationScreen(email: email),
+        ),
+      );
+    } on FirebaseAuthException catch (e) {
+      if (!mounted) return;
+      String message;
+      switch (e.code) {
+        case 'email-already-in-use':
+          message = 'Email này đã được sử dụng';
+          break;
+        case 'weak-password':
+          message = 'Mật khẩu quá yếu';
+          break;
+        case 'invalid-email':
+          message = 'Email không hợp lệ';
+          break;
+        default:
+          message = 'Đã xảy ra lỗi: ${e.message}';
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(message), backgroundColor: Colors.red),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Đã xảy ra lỗi: ${e.toString()}'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -75,9 +187,9 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                     ),
                   ),
                 ),
-                Align(
+                const Align(
                   alignment: Alignment.center,
-                  child: const Text(
+                  child: Text(
                     'Create Account',
                     style: TextStyle(
                       fontSize: 28,
@@ -243,7 +355,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         ),
                       ),
                     const SizedBox(height: 24),
-
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -257,8 +368,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         ),
                         Row(
                           mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Text(
+                          children: const [
+                            Text(
                               'Terms of Service ',
                               style: TextStyle(
                                 fontSize: 12,
@@ -267,7 +378,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const Text(
+                            Text(
                               'and ',
                               style: TextStyle(
                                 fontSize: 12,
@@ -275,7 +386,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               ),
                               textAlign: TextAlign.center,
                             ),
-                            const Text(
+                            Text(
                               'Privacy Policy',
                               style: TextStyle(
                                 fontSize: 12,
@@ -293,63 +404,39 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       width: double.infinity,
                       height: 56,
                       child: ElevatedButton(
-                        onPressed: () {
-                          setState(() {
-                            _nameError = _nameController.text.trim().isEmpty;
-                            _emailError = _emailController.text.trim().isEmpty;
-                            _mobileError = _mobileController.text
-                                .trim()
-                                .isEmpty;
-                            _dobError = _dobController.text.trim().isEmpty;
-                            _passwordError = _passwordController.text
-                                .trim()
-                                .isEmpty;
-                            _confirmPasswordError = _confirmPasswordController
-                                .text
-                                .trim()
-                                .isEmpty;
-                            _passwordMismatch =
-                                !_passwordError &&
-                                !_confirmPasswordError &&
-                                _passwordController.text !=
-                                    _confirmPasswordController.text;
-                          });
-
-                          if (!_nameError &&
-                              !_emailError &&
-                              !_mobileError &&
-                              !_dobError &&
-                              !_passwordError &&
-                              !_confirmPasswordError &&
-                              !_passwordMismatch) {
-                            Navigator.of(context).pushReplacement(
-                              MaterialPageRoute(
-                                builder: (context) => WelcomeScreen(),
-                              ),
-                            );
-                          }
-                        },
+                        onPressed: _isLoading ? null : _handleSignUp,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFF00C18A),
+                          disabledBackgroundColor:
+                              const Color(0xFF00C18A).withOpacity(0.5),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(30),
                           ),
                         ),
-                        child: const Text(
-                          'Sign Up',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.black,
-                          ),
-                        ),
+                        child: _isLoading
+                            ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                'Sign Up',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.black,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(height: 20),
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Text(
+                        const Text(
                           'Already have an account?  ',
                           style: TextStyle(fontSize: 14, color: Colors.black),
                           textAlign: TextAlign.center,
@@ -393,7 +480,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
             color: Color(0xFF153B2C),
           ),
         ),
-        Text(
+        const Text(
           '*',
           style: TextStyle(
             fontSize: 20,
@@ -520,8 +607,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
     );
 
     if (picked != null) {
-      final formatted =
-          '${picked.day.toString().padLeft(2, '0')} / '
+      final formatted = '${picked.day.toString().padLeft(2, '0')} / '
           '${picked.month.toString().padLeft(2, '0')} / '
           '${picked.year}';
       setState(() {

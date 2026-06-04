@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "798915650948",
+    "project_id": "esis-2af7a",
+    "storage_bucket": "esis-2af7a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:798915650948:android:e30de78fc95a6a4f8e29d1",
+        "android_client_info": {
+          "package_name": "com.example.a_management"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCzXUOXWMSCreG3ryJ5pPoDcs2parGwCV4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
