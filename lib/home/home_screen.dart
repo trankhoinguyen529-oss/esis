@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../management/management_screen.dart';
 import 'tab_icon.dart';
 import '../transaction/transaction_screen.dart';
+import '../data/data_transaction.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -32,6 +33,24 @@ class _HomeState extends State<Home> {
       curve: Curves.easeInOut,
     );
   }
+
+  Text welcome_user() {
+    DateTime now = DateTime.now();
+    int hour = now.hour;
+    String period = 'Good Evening';
+    if (hour <= 12) period = 'Good Morning';
+    if (hour > 12 && hour < 18) period = 'Good Afternoon';
+    return Text(
+      period,
+      style: TextStyle(
+        color: Colors.black54,
+        fontSize: 14,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+  }
+
+  void display_transaction() {}
 
   int get _selectedIconIndex {
     switch (_currentPage) {
@@ -103,19 +122,12 @@ class _HomeState extends State<Home> {
                       'Hi, $displayName',
                       style: const TextStyle(
                         color: Colors.black,
-                        fontSize: 30,
+                        fontSize: 24,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     const SizedBox(height: 4),
-                    const Text(
-                      'Good Morning',
-                      style: TextStyle(
-                        color: Colors.black54,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
+                    welcome_user(),
                   ],
                 ),
               ),
@@ -266,66 +278,21 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 18),
                 Expanded(
-                  child: ListView(
-                    children: [
-                      _buildTransactionItem(
-                        Icons.wallet,
-                        'Salary',
-                        '18:27 - April 30',
-                        'Monthly',
-                        '\$4,000.00',
-                      ),
-                      _buildTransactionItem(
-                        Icons.local_grocery_store,
-                        'Groceries',
-                        '17:00 - April 24',
-                        'Pantry',
-                        '-\$100.00',
-                        negative: true,
-                      ),
-                      _buildTransactionItem(
-                        Icons.home,
-                        'Rent',
-                        '8:30 - April 15',
-                        'Rent',
-                        '-\$674.40',
-                        negative: true,
-                      ),
-                      _buildTransactionItem(
-                        Icons.directions_bus,
-                        'Transport',
-                        '9:30 - April 08',
-                        'Fuel',
-                        '-\$4.13',
-                        negative: true,
-                      ),
-                      _buildTransactionItem(
-                        Icons.directions_bus,
-                        'Transport',
-                        '9:30 - April 09',
-                        'Fuel',
-                        '-\$4.67',
-                        negative: true,
-                      ),
-                      _buildTransactionItem(
-                        Icons.directions_bus,
-                        'Transport',
-                        '9:30 - April 10',
-                        'Fuel',
-                        '-\$6.7',
-                        negative: true,
-                      ),
-                      _buildTransactionItem(
-                        Icons.directions_bus,
-                        'Transport',
-                        '9:30 - April 11',
-                        'Fuel',
-                        '-\$9.67',
-                        negative: true,
-                      ),
-                    ],
-                  ),
-                ),
+                    child: ListView.builder(
+                  itemCount: TransactionData.transactions.length,
+                  itemBuilder: (context, index) {
+                    final item = TransactionData.transactions[index];
+
+                    return _buildTransactionItem(
+                      item.icon,
+                      item.title,
+                      item.subtitle,
+                      item.tag,
+                      item.amount,
+                      negative: item.negative,
+                    );
+                  },
+                )),
               ],
             ),
           ),
