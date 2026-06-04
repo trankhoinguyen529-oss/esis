@@ -1,13 +1,10 @@
 import 'package:flutter/material.dart';
-
 import '../profile/edit_profile.dart';
 import '../profile/profile_screen.dart';
 import '../services/auth_service.dart';
 import '../management/management_screen.dart';
 import 'tab_icon.dart';
 import '../transaction/transaction_screen.dart';
-
-enum _ProfileView { profile, edit }
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -21,7 +18,6 @@ class _HomeState extends State<Home> {
   final PageController _pageController = PageController();
   int _selectedPeriod = 2; // 0: Daily, 1: Weekly, 2: Monthly
   int _currentPage = 0;
-  _ProfileView _profileView = _ProfileView.profile;
 
   @override
   void dispose() {
@@ -30,26 +26,11 @@ class _HomeState extends State<Home> {
   }
 
   void _goToPage(int page) {
-    if (_currentPage == page) {
-      if (page == 3 && _profileView == _ProfileView.edit) {
-        setState(() => _profileView = _ProfileView.profile);
-      }
-      return;
-    }
-
     _pageController.animateToPage(
       page,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-  }
-
-  void _openEditProfile() {
-    setState(() => _profileView = _ProfileView.edit);
-  }
-
-  void _closeEditProfile() {
-    setState(() => _profileView = _ProfileView.profile);
   }
 
   int get _selectedIconIndex {
@@ -81,16 +62,17 @@ class _HomeState extends State<Home> {
           controller: _pageController,
           onPageChanged: (index) => setState(() {
             _currentPage = index;
-            if (index != 3) {
-              _profileView = _ProfileView.profile;
-            }
+            // if (index != 3) {
+            //   _profileView = _ProfileView.profile;
+            // }
           }),
           physics: const BouncingScrollPhysics(),
           children: [
             _buildHomePage(primary, surface, displayName),
             const TransactionScreen(),
             const ManagementScreen(),
-            _buildProfileWrapper(),
+            const ProfileScreen(),
+            //_buildProfileWrapper(),
           ],
         ),
       ),
@@ -317,6 +299,30 @@ class _HomeState extends State<Home> {
                         '-\$4.13',
                         negative: true,
                       ),
+                      _buildTransactionItem(
+                        Icons.directions_bus,
+                        'Transport',
+                        '9:30 - April 09',
+                        'Fuel',
+                        '-\$4.67',
+                        negative: true,
+                      ),
+                      _buildTransactionItem(
+                        Icons.directions_bus,
+                        'Transport',
+                        '9:30 - April 10',
+                        'Fuel',
+                        '-\$6.7',
+                        negative: true,
+                      ),
+                      _buildTransactionItem(
+                        Icons.directions_bus,
+                        'Transport',
+                        '9:30 - April 11',
+                        'Fuel',
+                        '-\$9.67',
+                        negative: true,
+                      ),
                     ],
                   ),
                 ),
@@ -384,13 +390,5 @@ class _HomeState extends State<Home> {
         ],
       ),
     );
-  }
-
-  Widget _buildProfileWrapper() {
-    if (_profileView == _ProfileView.edit) {
-      return EditProfileScreen(onBack: _closeEditProfile);
-    }
-
-    return ProfileScreen(onEditProfile: _openEditProfile);
   }
 }

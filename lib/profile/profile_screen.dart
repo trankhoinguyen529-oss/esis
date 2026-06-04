@@ -1,11 +1,10 @@
+import 'package:a_management/profile/edit_profile.dart';
 import 'package:flutter/material.dart';
 
 import '../login/login_screen.dart';
 
 class ProfileScreen extends StatelessWidget {
-  final VoidCallback onEditProfile;
-
-  const ProfileScreen({super.key, required this.onEditProfile});
+  const ProfileScreen({super.key});
 
   void _showLogoutDialog(BuildContext context) async {
     final result = await showDialog<bool>(
@@ -104,16 +103,17 @@ class ProfileScreen extends StatelessWidget {
                       fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'ID: 25030024',
-                    style: TextStyle(color: Colors.black54, fontSize: 14),
-                  ),
                   const SizedBox(height: 30),
                   _buildMenuTile(
                     Icons.person,
                     'Edit Profile',
-                    onTap: onEditProfile,
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => EditProfileScreen(),
+                        ),
+                      );
+                    },
                   ),
                   const SizedBox(height: 12),
                   _buildMenuTile(Icons.shield, 'Security'),
