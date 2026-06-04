@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'management/management_screen.dart';
-import '../profile/profile_screen.dart';
 import '../profile/edit_profile.dart';
+import '../profile/profile_screen.dart';
 import '../services/auth_service.dart';
-import 'home/tab_icon.dart';
-import 'transaction/transaction_screen.dart';
+import '../management/management_screen.dart';
+import 'tab_icon.dart';
+import '../transaction/transaction_screen.dart';
 
 enum _ProfileView { profile, edit }
 
@@ -36,6 +36,7 @@ class _HomeState extends State<Home> {
       }
       return;
     }
+
     _pageController.animateToPage(
       page,
       duration: const Duration(milliseconds: 300),
@@ -102,14 +103,6 @@ class _HomeState extends State<Home> {
         onProfile: () => _goToPage(3),
       ),
     );
-  }
-
-  Widget _buildProfileWrapper() {
-    if (_profileView == _ProfileView.edit) {
-      return EditProfileScreen(onBack: _closeEditProfile);
-    }
-
-    return ProfileScreen(onEditProfile: _openEditProfile);
   }
 
   Widget _buildHomePage(Color primary, Color surface, String displayName) {
@@ -391,5 +384,13 @@ class _HomeState extends State<Home> {
         ],
       ),
     );
+  }
+
+  Widget _buildProfileWrapper() {
+    if (_profileView == _ProfileView.edit) {
+      return EditProfileScreen(onBack: _closeEditProfile);
+    }
+
+    return ProfileScreen(onEditProfile: _openEditProfile);
   }
 }

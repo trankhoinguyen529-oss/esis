@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'services/auth_service.dart';
+import '../services/auth_service.dart';
 import 'createaccount_screen.dart';
 import 'email_verification_screen.dart';
-import 'home_screen.dart';
-import 'widget/widget.dart';
+import '../home/home_screen.dart';
+import '../widget/widget.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});

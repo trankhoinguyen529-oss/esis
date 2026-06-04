@@ -3,8 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 import '../services/auth_service.dart';
-import 'login/email_verification_screen.dart';
-import 'login/welcome_screen.dart';
+import 'email_verification_screen.dart';
+import 'welcome_screen.dart';
 import '../widget/widget.dart';
 
 class CreateAccountScreen extends StatefulWidget {
