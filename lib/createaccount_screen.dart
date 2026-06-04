@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'services/auth_service.dart';
 import 'email_verification_screen.dart';
 import 'welcome_screen.dart';
+import 'widget/widget.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -36,6 +37,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool _passwordHasUpper = false;
   bool _passwordHasNumber = false;
   bool _passwordHasLength = false;
+  bool _passwordHasSpecial = false;
 
   @override
   void initState() {
@@ -65,8 +67,7 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       _mobileError = _mobileController.text.trim().isEmpty;
       _dobError = _dobController.text.trim().isEmpty;
       _passwordError = _passwordController.text.trim().isEmpty;
-      _confirmPasswordError =
-          _confirmPasswordController.text.trim().isEmpty;
+      _confirmPasswordError = _confirmPasswordController.text.trim().isEmpty;
       _passwordMismatch = !_passwordError &&
           !_confirmPasswordError &&
           _passwordController.text != _confirmPasswordController.text;
@@ -77,34 +78,33 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         !_mobileError &&
         !_dobError &&
         !_passwordError &&
-        !_confirmPasswordError &&
-        !_passwordMismatch;
+        !_confirmPasswordError;
   }
 
   /// Xử lý đăng ký với Firebase
   Future<void> _handleSignUp() async {
-    if (!_validateForm()) return;
-
-    // Kiểm tra email hợp lệ
-    final email = _emailController.text.trim();
-    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Email không hợp lệ'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (!_validateForm()) {
+      Appsnackbar.error_snackbar(context, 'All forms must be filled');
       return;
     }
 
+    // Kiểm tra email hợp lệ
+    final email = _emailController.text.trim();
+    // if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(email)) {
+    //   Appsnackbar.showError(context, 'Email is invalid');
+    //   return;
+    // }
+
     // Kiểm tra mật khẩu đủ mạnh
-    if (!_passwordHasUpper || !_passwordHasNumber || !_passwordHasLength) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Mật khẩu chưa đáp ứng yêu cầu'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (!_passwordHasUpper ||
+        !_passwordHasNumber ||
+        !_passwordHasLength ||
+        !_passwordHasSpecial) {
+      Appsnackbar.showError(context, 'Password does not meet the requirements');
+      return;
+    }
+    if (_passwordMismatch && !_confirmPasswordError) {
+      Appsnackbar.showError(context, 'Password must match');
       return;
     }
 
@@ -114,12 +114,10 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       final password = _passwordController.text;
 
       // 1. Đăng ký tài khoản
-      final credential =
-          await _authService.registerWithEmail(email, password);
+      final credential = await _authService.registerWithEmail(email, password);
 
       // 2. Cập nhật displayName
-      await credential.user
-          ?.updateDisplayName(_nameController.text.trim());
+      await credential.user?.updateDisplayName(_nameController.text.trim());
 
       // 3. Gửi email xác thực
       await _authService.sendEmailVerification();
@@ -137,28 +135,18 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
       String message;
       switch (e.code) {
         case 'email-already-in-use':
-          message = 'Email này đã được sử dụng';
-          break;
-        case 'weak-password':
-          message = 'Mật khẩu quá yếu';
+          message = 'Email is already used';
           break;
         case 'invalid-email':
-          message = 'Email không hợp lệ';
+          message = 'Email is invalid';
           break;
         default:
-          message = 'Đã xảy ra lỗi: ${e.message}';
+          message = 'An error occurred: ${e.message}';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
+      Appsnackbar.showError(context, message);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã xảy ra lỗi: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      Appsnackbar.showError(context, 'An unexpected error occurred');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -222,14 +210,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       hintText: 'Enter your full name',
                       keyboardType: TextInputType.name,
                     ),
-                    if (_nameError)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, left: 12),
-                        child: Text(
-                          'Must be filled',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
                     const SizedBox(height: 20),
                     _buildLabel('Email '),
                     const SizedBox(height: 12),
@@ -238,14 +218,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       hintText: 'Enter your email',
                       keyboardType: TextInputType.emailAddress,
                     ),
-                    if (_emailError)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, left: 12),
-                        child: Text(
-                          'Must be filled',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
                     const SizedBox(height: 20),
                     _buildLabel('Mobile Number '),
                     const SizedBox(height: 12),
@@ -255,14 +227,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       keyboardType: TextInputType.number,
                       inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     ),
-                    if (_mobileError)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, left: 12),
-                        child: Text(
-                          'Must be filled',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
                     const SizedBox(height: 20),
                     _buildLabel('Date Of Birth '),
                     const SizedBox(height: 12),
@@ -273,14 +237,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       readOnly: true,
                       onTap: () => _selectDate(context),
                     ),
-                    if (_dobError)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, left: 12),
-                        child: Text(
-                          'Must be filled',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
                     const SizedBox(height: 20),
                     _buildLabel('Password '),
                     const SizedBox(height: 12),
@@ -295,6 +251,8 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                           _passwordHasUpper = value.contains(RegExp(r'[A-Z]'));
                           _passwordHasNumber = value.contains(RegExp(r'[0-9]'));
                           _passwordHasLength = value.length >= 8;
+                          _passwordHasSpecial = value
+                              .contains(RegExp(r'[!@#$%^&*(),.?":{}|<>~-]'));
                         });
                       },
                     ),
@@ -318,15 +276,12 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                               label:
                                   'Password must contain more than 8 characters',
                             ),
+                            _buildPasswordRule(
+                              isValid: _passwordHasSpecial,
+                              label:
+                                  'Password must contain a special character',
+                            ),
                           ],
-                        ),
-                      ),
-                    if (_passwordError)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, left: 12),
-                        child: Text(
-                          'Must be filled',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
                         ),
                       ),
                     const SizedBox(height: 20),
@@ -338,22 +293,6 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                       onToggle: () =>
                           setState(() => _obscureConfirm = !_obscureConfirm),
                     ),
-                    if (_confirmPasswordError)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, left: 12),
-                        child: Text(
-                          'Must be filled',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
-                    if (_passwordMismatch && !_confirmPasswordError)
-                      const Padding(
-                        padding: EdgeInsets.only(top: 8, left: 12),
-                        child: Text(
-                          'Password must match',
-                          style: TextStyle(color: Colors.red, fontSize: 14),
-                        ),
-                      ),
                     const SizedBox(height: 24),
                     Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -470,25 +409,13 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   }
 
   Widget _buildLabel(String text) {
-    return Row(
-      children: [
-        Text(
-          text,
-          style: const TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-            color: Color(0xFF153B2C),
-          ),
-        ),
-        const Text(
-          '*',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: Colors.red,
-          ),
-        ),
-      ],
+    return Text(
+      text,
+      style: const TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.w600,
+        color: Color(0xFF153B2C),
+      ),
     );
   }
 
