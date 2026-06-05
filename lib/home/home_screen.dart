@@ -50,7 +50,39 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void display_transaction() {}
+  int getDayOfYear(DateTime date) {
+    return date.difference(DateTime(date.year, 1, 1)).inDays + 1;
+  }
+
+  int dayOfYear(int day, int month, int year) {
+    DateTime date = DateTime(year, month, day);
+    return date.difference(DateTime(year, 1, 1)).inDays + 1;
+  }
+
+  Widget display_transaction(int period) {
+    DateTime now = DateTime.now();
+    return ListView.builder(
+      itemCount: TransactionData.transactions.length,
+      itemBuilder: (context, index) {
+        final item = TransactionData.transactions[index];
+        if ((period == 0 && item.day == now.day && item.month == now.month) ||
+            (period == 2 && item.month == now.month) ||
+            (period == 1)) {
+          return _buildTransactionItem(
+            item.icon,
+            item.title,
+            item.time,
+            item.day,
+            item.month,
+            item.tag,
+            item.amount,
+            negative: item.negative,
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
 
   int get _selectedIconIndex {
     switch (_currentPage) {
@@ -87,7 +119,7 @@ class _HomeState extends State<Home> {
           }),
           physics: const BouncingScrollPhysics(),
           children: [
-            _buildHomePage(primary, surface, displayName),
+            _buildHomePage(primary, surface, displayName, context),
             const TransactionScreen(),
             const ManagementScreen(),
             const ProfileScreen(),
@@ -106,7 +138,8 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Widget _buildHomePage(Color primary, Color surface, String displayName) {
+  Widget _buildHomePage(
+      Color primary, Color surface, String displayName, BuildContext context) {
     return Column(
       children: [
         const SizedBox(height: 16),
@@ -253,7 +286,11 @@ class _HomeState extends State<Home> {
                       final labels = ['Daily', 'Weekly', 'Monthly'];
                       final selected = _selectedPeriod == i;
                       return GestureDetector(
-                        onTap: () => setState(() => _selectedPeriod = i),
+                        onTap: () {
+                          setState(() {
+                            _selectedPeriod = i;
+                          });
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                             horizontal: 18,
@@ -278,21 +315,8 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 18),
                 Expanded(
-                    child: ListView.builder(
-                  itemCount: TransactionData.transactions.length,
-                  itemBuilder: (context, index) {
-                    final item = TransactionData.transactions[index];
-
-                    return _buildTransactionItem(
-                      item.icon,
-                      item.title,
-                      item.subtitle,
-                      item.tag,
-                      item.amount,
-                      negative: item.negative,
-                    );
-                  },
-                )),
+                  child: display_transaction(_selectedPeriod),
+                ),
               ],
             ),
           ),
@@ -304,7 +328,9 @@ class _HomeState extends State<Home> {
   Widget _buildTransactionItem(
     IconData icon,
     String title,
-    String subtitle,
+    String time,
+    int day,
+    int month,
     String tag,
     String amount, {
     bool negative = false,
@@ -333,7 +359,7 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  subtitle,
+                  time + "  " + day.toString() + "/" + month.toString(),
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ],
