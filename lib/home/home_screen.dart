@@ -1,3 +1,4 @@
+import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import '../profile/edit_profile.dart';
 import '../profile/profile_screen.dart';
@@ -20,6 +21,13 @@ class _HomeState extends State<Home> {
   final PageController _pageController = PageController();
   int _selectedPeriod = 2; // 0: Daily, 1: Weekly, 2: Monthly
   int _currentPage = 0;
+  final Calculatesummary calculatesummary = Calculatesummary();
+
+  @override
+  void initState() {
+    calculatesummary.calculateSummary(2);
+    super.initState();
+  }
 
   @override
   void dispose() {
@@ -33,92 +41,6 @@ class _HomeState extends State<Home> {
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
-  }
-
-  Text welcomeUser() {
-    DateTime now = DateTime.now();
-    int hour = now.hour;
-    String period = 'Good Evening';
-    if (hour <= 12) period = 'Good Morning';
-    if (hour > 12 && hour < 18) period = 'Good Afternoon';
-    return Text(
-      period,
-      style: TextStyle(
-        color: Colors.black54,
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-      ),
-    );
-  }
-
-  int getDayOfYear(DateTime date) {
-    return date.difference(DateTime(date.year, 1, 1)).inDays + 1;
-  }
-
-  bool isSameWeek(int daydiff, int weekday) {
-    if (daydiff < weekday && daydiff >= 0) return true;
-    if (daydiff < 0 && (-1) * daydiff <= 7 - weekday) return true;
-    return false;
-  }
-
-  Widget displayTransaction(int period) {
-    DateTime now = DateTime.now();
-    return ListView.builder(
-      itemCount: TransactionData.transactions.length,
-      itemBuilder: (context, index) {
-        final item = TransactionData.transactions[index];
-        int daydiff = getDayOfYear(now) - getDayOfYear(item.date);
-        if ((period == 0 &&
-                item.date.day == now.day &&
-                item.date.month == now.month) ||
-            (period == 2 && item.date.month == now.month) ||
-            (period == 1 && isSameWeek(daydiff, now.weekday))) {
-          return _buildTransactionItem(
-            item.icon,
-            item.title,
-            item.time,
-            item.date.day,
-            item.date.month,
-            item.tag,
-            item.amount,
-            negative: item.negative,
-          );
-        }
-        return const SizedBox.shrink();
-      },
-    );
-  }
-
-  void calculateSummary() {
-    income = 0;
-    expense = 0;
-
-    DateTime now = DateTime.now();
-
-    for (final item in TransactionData.transactions) {
-      bool match = false;
-
-      if (_selectedPeriod == 0) {
-        match = item.date.day == now.day && item.date.month == now.month;
-      } else if (_selectedPeriod == 1) {
-        int daydiff = getDayOfYear(now) - getDayOfYear(item.date);
-
-        match = isSameWeek(daydiff, now.weekday);
-      } else {
-        match = item.date.month == now.month;
-      }
-
-      if (match) {
-        if (item.negative) {
-          expense += item.amount;
-        } else {
-          income += item.amount;
-        }
-      }
-    }
-
-    sIncome = '\$${income.toStringAsFixed(2)}';
-    sExpense = '\$${expense.toStringAsFixed(2)}';
   }
 
   int get _selectedIconIndex {
@@ -177,7 +99,6 @@ class _HomeState extends State<Home> {
 
   Widget _buildHomePage(
       Color primary, Color surface, String displayName, BuildContext context) {
-    calculateSummary();
     return Column(
       children: [
         const SizedBox(height: 16),
@@ -198,7 +119,7 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    welcomeUser(),
+                    Welcomeuser().welcomeUser(),
                   ],
                 ),
               ),
@@ -248,7 +169,7 @@ class _HomeState extends State<Home> {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        sIncome,
+                        calculatesummary.sIncome,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -285,7 +206,7 @@ class _HomeState extends State<Home> {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        sExpense,
+                        calculatesummary.sExpense,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -327,7 +248,7 @@ class _HomeState extends State<Home> {
                         onTap: () {
                           setState(() {
                             _selectedPeriod = i;
-                            calculateSummary();
+                            calculatesummary.calculateSummary(_selectedPeriod);
                           });
                         },
                         child: Container(
@@ -354,78 +275,14 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 18),
                 Expanded(
-                  child: displayTransaction(_selectedPeriod),
+                  child:
+                      Displaytransaction().displayTransaction(_selectedPeriod),
                 ),
               ],
             ),
           ),
         ),
       ],
-    );
-  }
-
-  double income = 0.00;
-  double expense = 0.00;
-  String sIncome = '';
-  String sExpense = '';
-
-  Widget _buildTransactionItem(
-    IconData icon,
-    String title,
-    String time,
-    int day,
-    int month,
-    String tag,
-    double amount, {
-    bool negative = false,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(color: Colors.transparent),
-            child: Icon(icon, color: const Color(0xFF4DD0C1), size: 28),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "$time  $day/$month",
-                  style: const TextStyle(fontSize: 12, color: Colors.black54),
-                ),
-              ],
-            ),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              Text(tag, style: const TextStyle(color: Colors.black54)),
-              const SizedBox(height: 6),
-              Text(
-                (negative) ? '-\$$amount' : '+\$$amount',
-                style: TextStyle(
-                  color: negative ? Colors.blue : Colors.black,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 20,
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }

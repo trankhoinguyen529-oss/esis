@@ -1,11 +1,18 @@
 import 'package:a_management/profile/edit_profile.dart';
+import 'package:a_management/services/auth_service.dart';
 import 'package:flutter/material.dart';
 
 import '../login/login_screen.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
 
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  final AuthService _authService = AuthService();
   void _showLogoutDialog(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
@@ -28,6 +35,8 @@ class ProfileScreen extends StatelessWidget {
 
     if (!context.mounted) return;
     if (result == true) {
+      await _authService.signOut();
+      if (!mounted) return;
       Navigator.of(context).pushAndRemoveUntil(
         MaterialPageRoute(builder: (_) => const LoginScreen()),
         (route) => false,
