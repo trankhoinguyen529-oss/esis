@@ -6,7 +6,7 @@ class TransactionItem {
   final String time;
   final DateTime date;
   final String tag;
-  final String amount;
+  final double amount;
   final bool negative;
 
   const TransactionItem({
@@ -28,7 +28,7 @@ class TransactionData {
       time: '18:27',
       date: DateTime(2026, 6, 30),
       tag: 'Monthly',
-      amount: '\$4,000.00',
+      amount: 4000.00,
     ),
     TransactionItem(
       icon: Icons.local_grocery_store,
@@ -36,7 +36,7 @@ class TransactionData {
       time: '17:00',
       date: DateTime(2026, 6, 24),
       tag: 'Pantry',
-      amount: '-\$100.00',
+      amount: 100.00,
       negative: true,
     ),
     TransactionItem(
@@ -45,7 +45,7 @@ class TransactionData {
       time: '8:30',
       date: DateTime(2026, 6, 5),
       tag: 'Rent',
-      amount: '-\$674.40',
+      amount: 674.40,
       negative: true,
     ),
     TransactionItem(
@@ -54,7 +54,7 @@ class TransactionData {
       time: '9:30',
       date: DateTime(2026, 6, 5),
       tag: 'Fuel',
-      amount: '-\$4.13',
+      amount: 4.13,
       negative: true,
     ),
     TransactionItem(
@@ -63,7 +63,7 @@ class TransactionData {
       time: '9:30',
       date: DateTime(2026, 6, 6),
       tag: 'Fuel',
-      amount: '-\$4.13',
+      amount: 4.13,
       negative: true,
     ),
     TransactionItem(
@@ -72,7 +72,7 @@ class TransactionData {
       time: '9:30',
       date: DateTime(2026, 6, 7),
       tag: 'Fuel',
-      amount: '-\$4.13',
+      amount: 4.13,
       negative: true,
     ),
     TransactionItem(
@@ -81,7 +81,7 @@ class TransactionData {
       time: '9:30',
       date: DateTime(2026, 6, 8),
       tag: 'Fuel',
-      amount: '-\$4.13',
+      amount: 4.13,
       negative: true,
     ),
     TransactionItem(
@@ -90,7 +90,7 @@ class TransactionData {
       time: '9:30',
       date: DateTime(2026, 6, 9),
       tag: 'Fuel',
-      amount: '-\$4.13',
+      amount: 4.13,
       negative: true,
     ),
     TransactionItem(
@@ -99,7 +99,7 @@ class TransactionData {
       time: '9:30',
       date: DateTime(2026, 6, 10),
       tag: 'Fuel',
-      amount: '-\$4.13',
+      amount: 4.13,
       negative: true,
     ),
   ];

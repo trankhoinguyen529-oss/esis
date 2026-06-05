@@ -35,7 +35,7 @@ class _HomeState extends State<Home> {
     );
   }
 
-  Text welcome_user() {
+  Text welcomeUser() {
     DateTime now = DateTime.now();
     int hour = now.hour;
     String period = 'Good Evening';
@@ -61,7 +61,7 @@ class _HomeState extends State<Home> {
     return false;
   }
 
-  Widget display_transaction(int period) {
+  Widget displayTransaction(int period) {
     DateTime now = DateTime.now();
     return ListView.builder(
       itemCount: TransactionData.transactions.length,
@@ -73,6 +73,11 @@ class _HomeState extends State<Home> {
                 item.date.month == now.month) ||
             (period == 2 && item.date.month == now.month) ||
             (period == 1 && isSameWeek(daydiff, now.weekday))) {
+          if (item.negative) {
+            expense += item.amount;
+          } else {
+            income += item.amount;
+          }
           return _buildTransactionItem(
             item.icon,
             item.title,
@@ -165,7 +170,7 @@ class _HomeState extends State<Home> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    welcome_user(),
+                    welcomeUser(),
                   ],
                 ),
               ),
@@ -198,7 +203,7 @@ class _HomeState extends State<Home> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Icon(
                         Icons.trending_up,
                         color: Color(0xFF00C18A),
@@ -215,7 +220,7 @@ class _HomeState extends State<Home> {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        '\$4,000.00',
+                        sIncome,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -235,7 +240,7 @@ class _HomeState extends State<Home> {
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
-                    children: const [
+                    children: [
                       Icon(
                         Icons.trending_down,
                         color: Colors.blue,
@@ -252,7 +257,7 @@ class _HomeState extends State<Home> {
                       ),
                       SizedBox(height: 6),
                       Text(
-                        '\$1,187.40',
+                        sExpense,
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
@@ -320,7 +325,7 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 18),
                 Expanded(
-                  child: display_transaction(_selectedPeriod),
+                  child: displayTransaction(_selectedPeriod),
                 ),
               ],
             ),
@@ -330,6 +335,11 @@ class _HomeState extends State<Home> {
     );
   }
 
+  double income = 0.00;
+  double expense = 0.00;
+  String sIncome = '';
+  String sExpense = '';
+
   Widget _buildTransactionItem(
     IconData icon,
     String title,
@@ -337,7 +347,7 @@ class _HomeState extends State<Home> {
     int day,
     int month,
     String tag,
-    String amount, {
+    double amount, {
     bool negative = false,
   }) {
     return Padding(
@@ -364,7 +374,7 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  time + "  " + day.toString() + "/" + month.toString(),
+                  "$time  $day/$month",
                   style: const TextStyle(fontSize: 12, color: Colors.black54),
                 ),
               ],
@@ -376,7 +386,7 @@ class _HomeState extends State<Home> {
               Text(tag, style: const TextStyle(color: Colors.black54)),
               const SizedBox(height: 6),
               Text(
-                amount,
+                (negative) ? '-\$$amount' : '+\$$amount',
                 style: TextStyle(
                   color: negative ? Colors.blue : Colors.black,
                   fontWeight: FontWeight.w700,
