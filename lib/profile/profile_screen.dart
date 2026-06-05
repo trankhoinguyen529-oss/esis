@@ -33,7 +33,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ),
     );
 
-    if (!context.mounted) return;
     if (result == true) {
       await _authService.signOut();
       if (!mounted) return;
