@@ -28,7 +28,7 @@ class TransactionData {
       time: '18:27',
       date: DateTime(2026, 6, 30),
       tag: 'Monthly',
-      amount: 4000.00,
+      amount: 6767.00,
     ),
     TransactionItem(
       icon: Icons.local_grocery_store,

@@ -73,11 +73,6 @@ class _HomeState extends State<Home> {
                 item.date.month == now.month) ||
             (period == 2 && item.date.month == now.month) ||
             (period == 1 && isSameWeek(daydiff, now.weekday))) {
-          if (item.negative) {
-            expense += item.amount;
-          } else {
-            income += item.amount;
-          }
           return _buildTransactionItem(
             item.icon,
             item.title,
@@ -92,6 +87,38 @@ class _HomeState extends State<Home> {
         return const SizedBox.shrink();
       },
     );
+  }
+
+  void calculateSummary() {
+    income = 0;
+    expense = 0;
+
+    DateTime now = DateTime.now();
+
+    for (final item in TransactionData.transactions) {
+      bool match = false;
+
+      if (_selectedPeriod == 0) {
+        match = item.date.day == now.day && item.date.month == now.month;
+      } else if (_selectedPeriod == 1) {
+        int daydiff = getDayOfYear(now) - getDayOfYear(item.date);
+
+        match = isSameWeek(daydiff, now.weekday);
+      } else {
+        match = item.date.month == now.month;
+      }
+
+      if (match) {
+        if (item.negative) {
+          expense += item.amount;
+        } else {
+          income += item.amount;
+        }
+      }
+    }
+
+    sIncome = '\$${income.toStringAsFixed(2)}';
+    sExpense = '\$${expense.toStringAsFixed(2)}';
   }
 
   int get _selectedIconIndex {
@@ -150,6 +177,7 @@ class _HomeState extends State<Home> {
 
   Widget _buildHomePage(
       Color primary, Color surface, String displayName, BuildContext context) {
+    calculateSummary();
     return Column(
       children: [
         const SizedBox(height: 16),
@@ -299,6 +327,7 @@ class _HomeState extends State<Home> {
                         onTap: () {
                           setState(() {
                             _selectedPeriod = i;
+                            calculateSummary();
                           });
                         },
                         child: Container(
