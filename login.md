@@ -680,3 +680,84 @@ lib/
 ├── email_verification_screen.dart   (verify email)
 └── home_screen.dart                 (logout)
 ```
+
+---
+
+## 9. Google Sign-In
+
+### 9.1 Dependencies – `pubspec.yaml`
+
+```yaml
+dependencies:
+  google_sign_in: ^6.2.2
+```
+
+### 9.2 Firebase Console
+
+Vào Firebase Console → Authentication → Sign-in method → Bật **Google**
+
+### 9.3 iOS – `ios/Runner/Info.plist`
+
+Lấy `REVERSED_CLIENT_ID` từ file `ios/Runner/GoogleService-Info.plist`:
+
+```xml
+<key>CFBundleURLTypes</key>
+<array>
+  <dict>
+    <key>CFBundleTypeRole</key>
+    <string>Editor</string>
+    <key>CFBundleURLSchemes</key>
+    <array>
+      <string>com.googleusercontent.apps.YOUR_CLIENT_ID</string>
+    </array>
+  </dict>
+</array>
+```
+
+### 9.4 `lib/services/auth_service.dart`
+
+```dart
+import 'package:google_sign_in/google_sign_in.dart';
+
+// Trong class AuthService:
+final GoogleSignIn _googleSignIn = GoogleSignIn();
+
+/// Kiểm tra user hiện tại đăng nhập bằng Google không
+bool get isGoogleUser {
+  final user = _auth.currentUser;
+  if (user == null) return false;
+  return user.providerData.any((info) => info.providerId == 'google.com');
+}
+
+/// Đăng nhập bằng Google (không cần verify email)
+Future<UserCredential?> signInWithGoogle() async {
+  final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+  if (googleUser == null) return null; // user huỷ
+
+  final googleAuth = await googleUser.authentication;
+  final credential = GoogleAuthProvider.credential(
+    accessToken: googleAuth.accessToken,
+    idToken: googleAuth.idToken,
+  );
+  return await _auth.signInWithCredential(credential);
+}
+
+/// Đăng xuất (Firebase + Google session)
+Future<void> signOut() async {
+  await Future.wait([_auth.signOut(), _googleSignIn.signOut()]);
+}
+```
+
+### 9.5 Flow Google Sign-In
+
+```
+Nhấn "Continue with Google"
+    ↓
+GoogleSignIn().signIn() – hiện Google account picker
+    ↓
+Lấy idToken + accessToken
+    ↓
+Firebase signInWithCredential(GoogleAuthProvider.credential(...))
+    ↓
+Home Screen (không cần verify email – Google đã verify)
+```

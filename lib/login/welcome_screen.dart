@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../services/auth_service.dart';
 import 'createaccount_screen.dart';
@@ -20,6 +21,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   final TextEditingController _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _isLoading = false;
+  bool _isGoogleLoading = false;
 
   @override
   void dispose() {
@@ -87,6 +89,31 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       Appsnackbar.showError(context, 'An unexpected error occurred');
     } finally {
       if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// Xử lý đăng nhập với Google
+  Future<void> _handleGoogleSignIn() async {
+    setState(() => _isGoogleLoading = true);
+
+    try {
+      final credential = await _authService.signInWithGoogle();
+
+      // Người dùng huỷ → credential == null
+      if (credential == null) return;
+
+      if (!mounted) return;
+
+      // Google users luôn verified → vào Home ngay
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (_) => const Home()),
+        (route) => false,
+      );
+    } on Exception catch (e) {
+      if (!mounted) return;
+      Appsnackbar.showError(context, 'Google Sign-In thất bại: $e');
+    } finally {
+      if (mounted) setState(() => _isGoogleLoading = false);
     }
   }
 
@@ -294,8 +321,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    const SizedBox(height: 24),
-                    const Center(),
+                    const SizedBox(height: 32),
                     const SizedBox(height: 120),
                     const Center(
                       child: Text(
@@ -307,12 +333,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    // Icons đăng nhập mạng xã hội
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
-                      children: const [
-                        _SocialButton(icon: Icons.facebook),
-                        SizedBox(width: 18),
-                        _SocialButton(icon: Icons.g_mobiledata),
+                      children: [
+                        // Facebook icon (placeholder)
+                        _SocialIconButton(
+                          label: 'lib/assets/svgs/Facebook.svg',
+                          onTap: () {},
+                        ),
+                        const SizedBox(width: 18),
+                        // Google icon
+                        _SocialIconButton(
+                          label: 'lib/assets/svgs/Google.svg',
+                          isLoading: _isGoogleLoading,
+                          onTap: (_isLoading || _isGoogleLoading)
+                              ? null
+                              : _handleGoogleSignIn,
+                        ),
                       ],
                     ),
                     const SizedBox(height: 26),
@@ -358,21 +396,30 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   }
 }
 
-class _SocialButton extends StatelessWidget {
-  final IconData icon;
+class _SocialIconButton extends StatelessWidget {
+  final String? label;
+  final VoidCallback? onTap;
+  final bool isLoading;
 
-  const _SocialButton({required this.icon});
+  const _SocialIconButton({
+    this.label,
+    this.onTap,
+    this.isLoading = false,
+  });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 56,
-      height: 56,
-      decoration: const BoxDecoration(
-        color: Color(0xFFE7F8EE),
-        shape: BoxShape.circle,
-      ),
-      child: Icon(icon, color: const Color(0xFF153B2C), size: 28),
+    return GestureDetector(
+      onTap: onTap,
+      child: isLoading
+          ? const Padding(
+              padding: EdgeInsets.all(16),
+              child: CircularProgressIndicator(
+                color: Color(0xFF4285F4),
+                strokeWidth: 2,
+              ),
+            )
+          : SvgPicture.asset(label!),
     );
   }
 }

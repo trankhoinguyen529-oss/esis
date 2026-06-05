@@ -32,11 +32,14 @@ class _SplashScreenState extends State<SplashScreen> {
     if (user == null) {
       // Chưa đăng nhập → Login
       destination = const LoginScreen();
+    } else if (_authService.isGoogleUser) {
+      // Đăng nhập bằng Google → luôn verified, vào Home ngay
+      destination = const Home();
     } else if (!user.emailVerified) {
-      // Đã đăng nhập nhưng chưa verify email
+      // Email/Password user chưa verify email
       destination = EmailVerificationScreen(email: user.email ?? '');
     } else {
-      // Đã đăng nhập và đã verify → Home
+      // Đã đăng nhập bằng email và đã verify → Home
       destination = const Home();
     }
 
