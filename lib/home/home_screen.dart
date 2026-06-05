@@ -6,6 +6,7 @@ import '../management/management_screen.dart';
 import 'tab_icon.dart';
 import '../transaction/transaction_screen.dart';
 import '../data/data_transaction.dart';
+import 'dart:math';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -54,9 +55,10 @@ class _HomeState extends State<Home> {
     return date.difference(DateTime(date.year, 1, 1)).inDays + 1;
   }
 
-  int dayOfYear(int day, int month, int year) {
-    DateTime date = DateTime(year, month, day);
-    return date.difference(DateTime(year, 1, 1)).inDays + 1;
+  bool isSameWeek(int daydiff, int weekday) {
+    if (daydiff < weekday && daydiff >= 0) return true;
+    if (daydiff < 0 && (-1) * daydiff <= 7 - weekday) return true;
+    return false;
   }
 
   Widget display_transaction(int period) {
@@ -65,15 +67,18 @@ class _HomeState extends State<Home> {
       itemCount: TransactionData.transactions.length,
       itemBuilder: (context, index) {
         final item = TransactionData.transactions[index];
-        if ((period == 0 && item.day == now.day && item.month == now.month) ||
-            (period == 2 && item.month == now.month) ||
-            (period == 1)) {
+        int daydiff = getDayOfYear(now) - getDayOfYear(item.date);
+        if ((period == 0 &&
+                item.date.day == now.day &&
+                item.date.month == now.month) ||
+            (period == 2 && item.date.month == now.month) ||
+            (period == 1 && isSameWeek(daydiff, now.weekday))) {
           return _buildTransactionItem(
             item.icon,
             item.title,
             item.time,
-            item.day,
-            item.month,
+            item.date.day,
+            item.date.month,
             item.tag,
             item.amount,
             negative: item.negative,
