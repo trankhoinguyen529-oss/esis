@@ -13,7 +13,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
-
   void _showLogoutDialog(BuildContext context) async {
     final result = await showDialog<bool>(
       context: context,
