@@ -1,6 +1,7 @@
 import 'dart:async';
+import 'package:a_management/widget/appsnackbar.dart';
 import 'package:flutter/material.dart';
-import 'services/auth_service.dart';
+import '../services/auth_service.dart';
 import 'login_screen.dart';
 import 'welcome_screen.dart';
 
@@ -52,21 +53,13 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       await _authService.sendEmailVerification();
       _startCooldown();
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email xác thực đã được gửi lại!'),
-            backgroundColor: Color(0xFF00C18A),
-          ),
-        );
+        Appsnackbar.showSuccess(
+            context, 'Email verification sent successfully!');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
+        Appsnackbar.showError(
+            context, 'Failed to resend email: ${e.toString()}');
       }
     }
   }
@@ -80,24 +73,15 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
       if (verified) {
         await _authService.signOut();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Email đã xác thực thành công! Vui lòng đăng nhập.'),
-            backgroundColor: Color(0xFF00C18A),
-          ),
-        );
+        Appsnackbar.error_snackbar(
+            context, 'Email verified successfully! Please log in again');
         Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(builder: (_) => const WelcomeScreen()),
           (route) => false,
         );
       } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text(
-                'Email chưa được xác thực. Vui lòng kiểm tra hộp thư của bạn.'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        Appsnackbar.error_snackbar(
+            context, 'Email not verified yet. Please check your inbox.');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -138,7 +122,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 const Align(
                   alignment: Alignment.center,
                   child: Text(
-                    'Xác thực Email',
+                    'Verify Your Email',
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
@@ -178,7 +162,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                     const SizedBox(height: 24),
                     const Text(
-                      'Kiểm tra hộp thư của bạn',
+                      'Check Your Inbox',
                       style: TextStyle(
                         fontSize: 22,
                         fontWeight: FontWeight.w700,
@@ -188,7 +172,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                     const SizedBox(height: 12),
                     Text(
-                      'Chúng tôi đã gửi email xác thực đến:',
+                      'We have sent a verification email to:',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -207,7 +191,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Vui lòng click vào link trong email để xác thực tài khoản, sau đó nhấn nút bên dưới.',
+                      'Please click the link in the email to verify your account, then press the button below. If you don\'t see the email, check your spam folder or try resending.',
                       style: TextStyle(
                         fontSize: 14,
                         color: Colors.grey.shade600,
@@ -239,7 +223,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                                 ),
                               )
                             : const Text(
-                                'Tôi đã xác thực Email',
+                                'I have verified my email',
                                 style: TextStyle(
                                   fontSize: 18,
                                   fontWeight: FontWeight.w700,
@@ -268,8 +252,8 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         ),
                         child: Text(
                           _canResend
-                              ? 'Gửi lại Email'
-                              : 'Gửi lại sau ${_resendCooldown}s',
+                              ? 'Resend Email'
+                              : 'Resend after ${_resendCooldown}s',
                           style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.w600,
@@ -285,7 +269,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                     GestureDetector(
                       onTap: _goBackToLogin,
                       child: const Text(
-                        'Quay lại Đăng nhập',
+                        'Back to Login',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

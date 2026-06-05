@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-import 'services/auth_service.dart';
+import '../services/auth_service.dart';
 import 'createaccount_screen.dart';
 import 'email_verification_screen.dart';
-import 'home_screen.dart';
+import '../home/home_screen.dart';
+import '../widget/widget.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -40,12 +41,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final password = _passwordController.text;
 
     if (email.isEmpty || password.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vui lòng nhập email và mật khẩu'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      Appsnackbar.showError(context, 'Please enter both email and password');
       return;
     }
 
@@ -71,31 +67,24 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       String message;
       switch (e.code) {
         case 'user-not-found':
-          message = 'Không tìm thấy tài khoản';
+          message = 'User not found';
           break;
         case 'wrong-password':
-          message = 'Mật khẩu không đúng';
+          message = 'Wrong password';
           break;
         case 'invalid-credential':
-          message = 'Email hoặc mật khẩu không đúng';
+          message = 'Email or password is incorrect';
           break;
         case 'invalid-email':
-          message = 'Email không hợp lệ';
+          message = 'Email is invalid';
           break;
         default:
-          message = 'Đã xảy ra lỗi: ${e.message}';
+          message = 'An error occurred: ${e.message}';
       }
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message), backgroundColor: Colors.red),
-      );
+      Appsnackbar.showError(context, message);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Đã xảy ra lỗi: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
+      Appsnackbar.showError(context, 'An unexpected error occurred');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -113,14 +102,17 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             SizedBox(width: 8),
             Expanded(
               child: Text(
-                'Email chưa xác thực',
+                'Email was not verified',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+                textAlign: TextAlign.center,
               ),
             ),
           ],
         ),
-        content: const Text(
-          'Bạn cần xác thực email trước khi đăng nhập. Vui lòng kiểm tra hộp thư của bạn.',
+        content: Text(
+          'You need to verify your email before logging in. Please check your inbox.',
+          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700),
+          textAlign: TextAlign.center,
         ),
         actions: [
           TextButton(
@@ -129,7 +121,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               _authService.signOut();
             },
             child: const Text(
-              'Đóng',
+              'Close',
               style: TextStyle(color: Color(0xFF153B2C)),
             ),
           ),
@@ -149,7 +141,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ),
             ),
             child: const Text(
-              'Xác thực ngay',
+              'Verify Now',
               style: TextStyle(color: Colors.white),
             ),
           ),
