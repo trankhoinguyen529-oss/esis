@@ -412,12 +412,9 @@ class _SocialIconButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: isLoading
-          ? const Padding(
-              padding: EdgeInsets.all(16),
-              child: CircularProgressIndicator(
-                color: Color(0xFF4285F4),
-                strokeWidth: 2,
-              ),
+          ? CircularProgressIndicator(
+              color: Color(0xFF4285F4),
+              strokeWidth: 2,
             )
           : SvgPicture.asset(label!),
     );
