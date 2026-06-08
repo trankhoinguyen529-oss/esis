@@ -1,0 +1,184 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+import '../data/data_transaction.dart';
+
+class DatabaseService {
+  static final DatabaseService _instance = DatabaseService._internal();
+  factory DatabaseService() => _instance;
+  DatabaseService._internal();
+
+  Database? _db;
+
+  // ─── Lấy UID của người dùng hiện tại ───────────────────────
+  String get _currentUserId {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid == null) throw StateError('Không có user đang đăng nhập.');
+    return uid;
+  }
+
+  Future<Database> get database async {
+    if (_db != null) return _db!;
+    _db = await _initDb();
+    return _db!;
+  }
+
+  Future<Database> _initDb() async {
+    final dbPath = await getDatabasesPath();
+    final path = join(dbPath, 'transactions.db');
+    return await openDatabase(
+      path,
+      version: 2,
+      onCreate: (db, version) async {
+        await _createTable(db);
+      },
+      onUpgrade: (db, oldVersion, newVersion) async {
+        if (oldVersion < 2) {
+          // Thêm cột user_id vào bảng cũ (dữ liệu cũ gán uid rỗng)
+          await db.execute(
+            "ALTER TABLE transactions ADD COLUMN user_id TEXT NOT NULL DEFAULT ''",
+          );
+        }
+      },
+    );
+  }
+
+  Future<void> _createTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        category TEXT NOT NULL,
+        icon_code INTEGER NOT NULL,
+        amount REAL NOT NULL,
+        is_expense INTEGER NOT NULL DEFAULT 1,
+        date TEXT NOT NULL,
+        time TEXT NOT NULL
+      )
+    ''');
+  }
+
+  // ─── CRUD ────────────────────────────────────────────────────
+
+  /// Thêm giao dịch mới vào DB (tự gắn user_id hiện tại)
+  Future<int> insertTransaction(TransactionItem item) async {
+    final db = await database;
+    final map = item.toMap();
+    map['user_id'] = _currentUserId;
+    final id = await db.insert('transactions', map);
+    // In lại toàn bộ bảng sau mỗi lần thêm để debug
+    await printAllTransactions();
+    return id;
+  }
+
+  /// Lấy tất cả giao dịch của user hiện tại
+  Future<List<TransactionItem>> getAllTransactions() async {
+    final db = await database;
+    final maps = await db.query(
+      'transactions',
+      where: 'user_id = ?',
+      whereArgs: [_currentUserId],
+      orderBy: 'date DESC, time DESC',
+    );
+    return maps.map((m) => TransactionItem.fromMap(m)).toList();
+  }
+
+  /// Lấy giao dịch theo kỳ: 0=Daily, 1=Weekly, 2=Monthly
+  Future<List<TransactionItem>> getTransactionsByPeriod(int period) async {
+    final all = await getAllTransactions();
+    return _filterByPeriod(all, period);
+  }
+
+  /// Tính income và expense theo kỳ
+  Future<Map<String, double>> getSummaryByPeriod(int period) async {
+    final items = period == -1
+        ? await getAllTransactions()
+        : await getTransactionsByPeriod(period);
+    double income = 0;
+    double expense = 0;
+    for (final item in items) {
+      if (item.isExpense) {
+        expense += item.amount;
+      } else {
+        income += item.amount;
+      }
+    }
+    return {'income': income, 'expense': expense};
+  }
+
+  List<TransactionItem> _filterByPeriod(
+      List<TransactionItem> all, int period) {
+    final now = DateTime.now();
+    return all.where((item) {
+      if (period == 0) {
+        // Daily: cùng ngày
+        return item.date.year == now.year &&
+            item.date.month == now.month &&
+            item.date.day == now.day;
+      } else if (period == 1) {
+        // Weekly: trong vòng 7 ngày của tuần hiện tại
+        final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
+        final endOfWeek = startOfWeek.add(const Duration(days: 6));
+        final d = DateTime(item.date.year, item.date.month, item.date.day);
+        final s = DateTime(
+            startOfWeek.year, startOfWeek.month, startOfWeek.day);
+        final e =
+            DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
+        return !d.isBefore(s) && !d.isAfter(e);
+      } else {
+        // Monthly: cùng tháng & năm
+        return item.date.year == now.year &&
+            item.date.month == now.month;
+      }
+    }).toList();
+  }
+
+  // ─────────────────────────────────────────────
+  // DEBUG ONLY – in toàn bộ bảng transactions ra console
+  // ─────────────────────────────────────────────
+  Future<void> printAllTransactions() async {
+    final db = await database;
+
+    // Lấy raw rows (tất cả user) để thấy đầy đủ khi debug
+    final rows = await db.query('transactions', orderBy: 'id ASC');
+
+    if (rows.isEmpty) {
+      // ignore: avoid_print
+      print('══════════════════════════════════════════════');
+      // ignore: avoid_print
+      print('📋 [DB] Bảng transactions: TRỐNG');
+      // ignore: avoid_print
+      print('══════════════════════════════════════════════');
+      return;
+    }
+
+    // ignore: avoid_print
+    print('\n══════════════════════════════════════════════');
+    // ignore: avoid_print
+    print('📋 [DB] Bảng transactions – ${rows.length} bản ghi');
+    // ignore: avoid_print
+    print('──────────────────────────────────────────────');
+
+    for (final row in rows) {
+      final isExpense = (row['is_expense'] as int) == 1;
+      final typeIcon = isExpense ? '🔴 Chi tiêu' : '🟢 Thu nhập';
+      final uid = (row['user_id'] as String);
+      final shortUid = uid.length > 8 ? '${uid.substring(0, 8)}…' : uid;
+      // ignore: avoid_print
+      print(
+        'ID: ${row['id']}'
+        ' | user: $shortUid'
+        ' | ${row['title']}'
+        ' (${row['category']})'
+        ' | $typeIcon'
+        ' | \$${(row['amount'] as num).toStringAsFixed(2)}'
+        ' | ${(row['date'] as String).substring(0, 10)}'
+        ' ${row['time']}',
+      );
+    }
+
+    // ignore: avoid_print
+    print('══════════════════════════════════════════════\n');
+  }
+}

@@ -1,44 +1,118 @@
 import 'package:a_management/data/data_transaction.dart';
+import 'package:a_management/services/database_service.dart';
 import 'package:flutter/material.dart';
-import 'package:a_management/widget/widget.dart';
 
 class Displaytransaction {
-  int getDayOfYear(DateTime date) {
-    return date.difference(DateTime(date.year, 1, 1)).inDays + 1;
-  }
-
-  bool isSameWeek(int daydiff, int weekday) {
-    if (daydiff < weekday && daydiff >= 0) return true;
-    if (daydiff < 0 && (-1) * daydiff <= 7 - weekday) return true;
-    return false;
-  }
-
+  /// Trả về Widget FutureBuilder hiển thị danh sách giao dịch theo kỳ.
+  /// period: 0=Daily, 1=Weekly, 2=Monthly, -1=All
   Widget displayTransaction(int period) {
-    DateTime now = DateTime.now();
-    return ListView.builder(
-      itemCount: TransactionData.transactions.length,
-      itemBuilder: (context, index) {
-        final item = TransactionData.transactions[index];
-        int daydiff = getDayOfYear(now) - getDayOfYear(item.date);
-        if ((period == 0 &&
-                item.date.day == now.day &&
-                item.date.month == now.month) ||
-            (period == 2 && item.date.month == now.month) ||
-            (period == 1 && isSameWeek(daydiff, now.weekday)) ||
-            period == -1) {
-          return Createtransactionitem().createTransactionItem(
-            item.icon,
-            item.title,
-            item.time,
-            item.date.day,
-            item.date.month,
-            item.tag,
-            item.amount,
-            negative: item.negative,
+    final Future<List<TransactionItem>> future = period == -1
+        ? DatabaseService().getAllTransactions()
+        : DatabaseService().getTransactionsByPeriod(period);
+
+    return FutureBuilder<List<TransactionItem>>(
+      future: future,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (snapshot.hasError) {
+          return Center(child: Text('Lỗi: ${snapshot.error}'));
+        }
+        final transactions = snapshot.data ?? [];
+        if (transactions.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: const [
+                Icon(Icons.receipt_long, size: 64, color: Color(0xFFB0C4BE)),
+                SizedBox(height: 12),
+                Text(
+                  'Chưa có giao dịch nào',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Color(0xFF8FA89C),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
           );
         }
-        return const SizedBox.shrink();
+        return ListView.builder(
+          itemCount: transactions.length,
+          itemBuilder: (context, index) {
+            final item = transactions[index];
+            return _TransactionItemWidget(item: item);
+          },
+        );
       },
+    );
+  }
+}
+
+class _TransactionItemWidget extends StatelessWidget {
+  final TransactionItem item;
+  const _TransactionItemWidget({required this.item});
+
+  @override
+  Widget build(BuildContext context) {
+    final isExpense = item.isExpense;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      child: Row(
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F8F3),
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Icon(item.icon, color: const Color(0xFF00C18A), size: 28),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '${item.time}  ${item.date.day}/${item.date.month}/${item.date.year}',
+                  style: const TextStyle(fontSize: 12, color: Colors.black54),
+                ),
+              ],
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                item.category,
+                style: const TextStyle(color: Colors.black54, fontSize: 12),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                isExpense
+                    ? '-\$${item.amount.toStringAsFixed(2)}'
+                    : '+\$${item.amount.toStringAsFixed(2)}',
+                style: TextStyle(
+                  color: isExpense ? Colors.blue : const Color(0xFF00C18A),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 18,
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
     );
   }
 }
