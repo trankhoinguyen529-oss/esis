@@ -111,7 +111,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       );
     } on Exception catch (e) {
       if (!mounted) return;
-      Appsnackbar.showError(context, 'Google Sign-In thất bại: $e');
+      Appsnackbar.showError(context, 'Google Sign-In failed: $e');
     } finally {
       if (mounted) setState(() => _isGoogleLoading = false);
     }

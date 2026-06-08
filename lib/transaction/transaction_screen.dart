@@ -57,104 +57,86 @@ class _TransactionScreenState extends State<TransactionScreen> {
           const SizedBox(height: 18),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
-            child: Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: surface,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Total Balance',
-                    style: TextStyle(color: Colors.black54, fontSize: 14),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    '\$7,783.00',
-                    style: TextStyle(
-                      fontSize: 34,
-                      fontWeight: FontWeight.w800,
+            child: Row(
+              children: [
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.trending_up,
+                          color: Color(0xFF00C18A),
+                          size: 30,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Income',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        SizedBox(height: 6),
+                        Text(
+                          '\$6767.00',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Icon(Icons.arrow_upward,
-                                  color: primary, size: 24),
-                              SizedBox(height: 8),
-                              Text(
-                                'Income',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                '\$4,120.00',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                            ],
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Icon(
+                          Icons.trending_down,
+                          color: Colors.blue,
+                          size: 30,
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Expense',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                            fontWeight: FontWeight.w800,
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(16),
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: const [
-                              Icon(Icons.arrow_downward,
-                                  color: Colors.blue, size: 24),
-                              SizedBox(height: 8),
-                              Text(
-                                'Expense',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  color: Colors.black54,
-                                ),
-                              ),
-                              SizedBox(height: 6),
-                              Text(
-                                '\$1,187.40',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.blue,
-                                ),
-                              ),
-                            ],
+                        SizedBox(height: 6),
+                        Text(
+                          '\$6767.00',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w800,
+                            color: Colors.blue,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 20),
           Expanded(
             child: Container(
               width: double.infinity,
@@ -163,8 +145,33 @@ class _TransactionScreenState extends State<TransactionScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
               ),
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-              child: Expanded(
-                child: Displaytransaction().displayTransaction(-1),
+              child: Column(
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Container(
+                        decoration: const BoxDecoration(
+                          color: primary,
+                          borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(180),
+                              bottom: Radius.circular(180)),
+                        ),
+                        child: Column(
+                          children: [
+                            SizedBox(height: 1),
+                            GestureDetector(
+                              child: Icon(Icons.filter_alt, size: 30),
+                              onTap: () {},
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 10),
+                  Expanded(child: Displaytransaction().displayTransaction(-1)),
+                ],
               ),
             ),
           ),

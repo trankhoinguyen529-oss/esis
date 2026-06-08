@@ -57,7 +57,7 @@ class TabIcon extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
             buildIcon(0, Icons.home, onHome),
-            buildIcon(1, Icons.bar_chart, onAnalytics),
+            //buildIcon(1, Icons.bar_chart, onAnalytics),
             buildIcon(2, Icons.compare_arrows, onTransaction),
             buildIcon(3, Icons.layers, onManagement),
             buildIcon(4, Icons.person, onProfile),
