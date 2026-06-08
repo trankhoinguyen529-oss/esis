@@ -1,24 +1,7 @@
 import 'package:flutter/material.dart';
-import 'add_transaction_screen.dart';
 
 class ManagementScreen extends StatelessWidget {
-  final VoidCallback? onTransactionAdded;
-  const ManagementScreen({super.key, this.onTransactionAdded});
-
-  static const _categories = [
-    {'icon': Icons.restaurant, 'label': 'Food'},
-    {'icon': Icons.directions_bus, 'label': 'Transport'},
-    {'icon': Icons.medical_services, 'label': 'Medicine'},
-    {'icon': Icons.local_grocery_store, 'label': 'Groceries'},
-    {'icon': Icons.home, 'label': 'Rent'},
-    {'icon': Icons.card_giftcard, 'label': 'Gifts'},
-    {'icon': Icons.savings, 'label': 'Savings'},
-    {'icon': Icons.movie, 'label': 'Entertainment'},
-    {'icon': Icons.wallet, 'label': 'Salary'},
-    {'icon': Icons.work, 'label': 'Work'},
-    {'icon': Icons.sports_esports, 'label': 'Gaming'},
-    {'icon': Icons.more_horiz, 'label': 'Others'},
-  ];
+  const ManagementScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -67,55 +50,120 @@ class ManagementScreen extends StatelessWidget {
                 color: surface,
                 borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
               ),
-              padding: const EdgeInsets.fromLTRB(18, 24, 18, 0),
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Chọn danh mục',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.all(20),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(24),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Nhấn vào danh mục để thêm giao dịch',
-                    style: TextStyle(fontSize: 13, color: Colors.black45),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Total Balance',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          '\$7,783.00',
+                          style: TextStyle(
+                            fontSize: 34,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 18),
+                        Row(
+                          children: const [
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Total Expense',
+                                    style: TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  SizedBox(height: 6),
+                                  Text(
+                                    '-\$1,187.40',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w800,
+                                      color: Colors.blue,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 18),
+                        Container(
+                          height: 10,
+                          decoration: BoxDecoration(
+                            color: Colors.black12,
+                            borderRadius: BorderRadius.circular(30),
+                          ),
+                          child: FractionallySizedBox(
+                            widthFactor: 0.3,
+                            child: Container(
+                              decoration: BoxDecoration(
+                                color: primary,
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '30% Of Your Expenses, Looks Good.',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF4D5E49),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 18),
                   Expanded(
-                    child: GridView.builder(
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 3,
-                        crossAxisSpacing: 12,
-                        mainAxisSpacing: 12,
-                        childAspectRatio: 1,
-                      ),
-                      itemCount: _categories.length,
-                      itemBuilder: (context, index) {
-                        final cat = _categories[index];
-                        return _CategoryTile(
-                          icon: cat['icon'] as IconData,
-                          label: cat['label'] as String,
-                          onTap: () async {
-                            final result = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => AddTransactionScreen(
-                                  category: cat['label'] as String,
-                                  icon: cat['icon'] as IconData,
-                                  onSaved: onTransactionAdded,
-                                ),
-                              ),
-                            );
-                            if (result == true) {
-                              onTransactionAdded?.call();
-                            }
-                          },
-                        );
-                      },
+                    child: GridView.count(
+                      crossAxisCount: 3,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1,
+                      children: const [
+                        _CategoryTile(
+                            icon: Icons.restaurant,
+                            label: 'Food',
+                            active: true),
+                        _CategoryTile(
+                            icon: Icons.directions_bus,
+                            label: 'Transport',
+                            active: true),
+                        _CategoryTile(
+                            icon: Icons.medical_services, label: 'Medicine'),
+                        _CategoryTile(
+                            icon: Icons.local_grocery_store,
+                            label: 'Groceries'),
+                        _CategoryTile(icon: Icons.home, label: 'Rent'),
+                        _CategoryTile(
+                            icon: Icons.card_giftcard, label: 'Gifts'),
+                        _CategoryTile(icon: Icons.savings, label: 'Savings'),
+                        _CategoryTile(
+                            icon: Icons.movie, label: 'Entertainment'),
+                        _CategoryTile(icon: Icons.add, label: 'More'),
+                      ],
                     ),
                   ),
                 ],
@@ -131,59 +179,35 @@ class ManagementScreen extends StatelessWidget {
 class _CategoryTile extends StatelessWidget {
   final IconData icon;
   final String label;
-  final VoidCallback onTap;
+  final bool active;
 
   const _CategoryTile({
     required this.icon,
     required this.label,
-    required this.onTap,
+    this.active = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF00C18A), Color(0xFF00A076)],
+    return Container(
+      decoration: BoxDecoration(
+        color: active ? const Color(0xFF006C4F) : const Color(0xFFC9EBEA),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(icon, color: Colors.white, size: 32),
+          const SizedBox(height: 12),
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w700,
+            ),
           ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF00C18A).withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: Colors.white, size: 26),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }

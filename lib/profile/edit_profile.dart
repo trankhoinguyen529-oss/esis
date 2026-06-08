@@ -200,7 +200,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                             ),
                             Switch(
                               value: _pushNotifications,
-                              activeColor: primary,
+                              activeThumbColor: primary,
                               onChanged: (value) => setState(() {
                                 _pushNotifications = value;
                               }),

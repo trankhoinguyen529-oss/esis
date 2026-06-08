@@ -1,11 +1,13 @@
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
+import '../profile/edit_profile.dart';
 import '../profile/profile_screen.dart';
 import '../services/auth_service.dart';
 import '../management/management_screen.dart';
 import 'tab_icon.dart';
 import '../transaction/transaction_screen.dart';
-import '../services/database_service.dart';
+import '../data/data_transaction.dart';
+import 'dart:math';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -19,33 +21,18 @@ class _HomeState extends State<Home> {
   final PageController _pageController = PageController();
   int _selectedPeriod = 2; // 0: Daily, 1: Weekly, 2: Monthly
   int _currentPage = 0;
-
-  double _income = 0;
-  double _expense = 0;
-  bool _summaryLoading = true;
+  final Calculatesummary calculatesummary = Calculatesummary();
 
   @override
   void initState() {
+    calculatesummary.calculateSummary(2);
     super.initState();
-    _loadSummary();
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadSummary() async {
-    setState(() => _summaryLoading = true);
-    final summary = await DatabaseService().getSummaryByPeriod(_selectedPeriod);
-    if (mounted) {
-      setState(() {
-        _income = summary['income'] ?? 0;
-        _expense = summary['expense'] ?? 0;
-        _summaryLoading = false;
-      });
-    }
   }
 
   void _goToPage(int page) {
@@ -85,13 +72,17 @@ class _HomeState extends State<Home> {
           controller: _pageController,
           onPageChanged: (index) => setState(() {
             _currentPage = index;
+            // if (index != 3) {
+            //   _profileView = _ProfileView.profile;
+            // }
           }),
           physics: const BouncingScrollPhysics(),
           children: [
             _buildHomePage(primary, surface, displayName, context),
-            TransactionScreen(onTransactionAdded: _loadSummary),
-            ManagementScreen(onTransactionAdded: _loadSummary),
+            const TransactionScreen(),
+            const ManagementScreen(),
             const ProfileScreen(),
+            //_buildProfileWrapper(),
           ],
         ),
       ),
@@ -162,13 +153,13 @@ class _HomeState extends State<Home> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.trending_up,
                         color: Color(0xFF00C18A),
                         size: 30,
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: 4),
+                      Text(
                         'Income',
                         style: TextStyle(
                           fontSize: 14,
@@ -176,20 +167,14 @@ class _HomeState extends State<Home> {
                           color: Colors.black54,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      _summaryLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 60,
-                              child: LinearProgressIndicator(),
-                            )
-                          : Text(
-                              '\$${_income.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
+                      SizedBox(height: 6),
+                      Text(
+                        calculatesummary.sIncome,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -205,13 +190,13 @@ class _HomeState extends State<Home> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.trending_down,
                         color: Colors.blue,
                         size: 30,
                       ),
-                      const SizedBox(height: 4),
-                      const Text(
+                      SizedBox(height: 4),
+                      Text(
                         'Expense',
                         style: TextStyle(
                           fontSize: 14,
@@ -219,21 +204,15 @@ class _HomeState extends State<Home> {
                           fontWeight: FontWeight.w800,
                         ),
                       ),
-                      const SizedBox(height: 6),
-                      _summaryLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 60,
-                              child: LinearProgressIndicator(),
-                            )
-                          : Text(
-                              '\$${_expense.toStringAsFixed(2)}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.blue,
-                              ),
-                            ),
+                      SizedBox(height: 6),
+                      Text(
+                        calculatesummary.sExpense,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w800,
+                          color: Colors.blue,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -267,8 +246,10 @@ class _HomeState extends State<Home> {
                       final selected = _selectedPeriod == i;
                       return GestureDetector(
                         onTap: () {
-                          setState(() => _selectedPeriod = i);
-                          _loadSummary();
+                          setState(() {
+                            _selectedPeriod = i;
+                            calculatesummary.calculateSummary(_selectedPeriod);
+                          });
                         },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
@@ -294,7 +275,8 @@ class _HomeState extends State<Home> {
                 ),
                 const SizedBox(height: 18),
                 Expanded(
-                  child: _HomeTransactionList(period: _selectedPeriod),
+                  child:
+                      Displaytransaction().displayTransaction(_selectedPeriod),
                 ),
               ],
             ),
@@ -302,16 +284,5 @@ class _HomeState extends State<Home> {
         ),
       ],
     );
-  }
-}
-
-/// Widget riêng để rebuild danh sách khi period thay đổi
-class _HomeTransactionList extends StatelessWidget {
-  final int period;
-  const _HomeTransactionList({required this.period});
-
-  @override
-  Widget build(BuildContext context) {
-    return Displaytransaction().displayTransaction(period);
   }
 }
