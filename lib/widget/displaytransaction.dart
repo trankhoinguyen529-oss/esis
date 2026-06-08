@@ -64,6 +64,7 @@ class _TransactionItemWidget extends StatelessWidget {
     final isExpense = item.isExpense;
     return GestureDetector(
       onTap: ontap,
+      behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(

@@ -80,22 +80,53 @@ class _CategorydetailState extends State<Categorydetail> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
-                        widget.category,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black87,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Text(
+                            widget.category,
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.w800,
+                              color: Colors.black87,
+                            ),
+                          ),
+                          Container(
+                            width: 40,
+                            height: 40,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF00C18A),
+                              shape: BoxShape.circle,
+                            ),
+                            child: IconButton(
+                              icon: const Icon(Icons.add),
+                              onPressed: () async {
+                                await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => AddTransactionScreen(
+                                      category: widget.category,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 6),
+                      //const SizedBox(height: 6),
                       const Text(
                         'Tap to edit transactions',
-                        style: TextStyle(fontSize: 13, color: Colors.black45),
+                        style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.black45),
                       ),
                       Expanded(
-                        child: Displaytransaction()
-                            .displayTransaction(-1, widget.category, () {}),
+                        child: Displaytransaction().displayTransaction(
+                          -1,
+                          widget.category,
+                          () {},
+                        ),
                       ),
                     ],
                   ),
