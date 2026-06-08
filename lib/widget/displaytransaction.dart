@@ -24,7 +24,8 @@ class Displaytransaction {
                 item.date.day == now.day &&
                 item.date.month == now.month) ||
             (period == 2 && item.date.month == now.month) ||
-            (period == 1 && isSameWeek(daydiff, now.weekday))) {
+            (period == 1 && isSameWeek(daydiff, now.weekday)) ||
+            period == -1) {
           return Createtransactionitem().createTransactionItem(
             item.icon,
             item.title,
