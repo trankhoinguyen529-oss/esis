@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
@@ -10,8 +11,10 @@ void main() async {
     options: DefaultFirebaseOptions.currentPlatform,
   );
 
-  // In bảng transactions ra debug console mỗi lần app khởi động
-  await DatabaseService().printAllTransactions();
+  // In bảng transactions ra debug console nếu đã có user đăng nhập
+  if (FirebaseAuth.instance.currentUser != null) {
+    await DatabaseService().printAllTransactions();
+  }
 
   runApp(const MyApp());
 }
