@@ -1,20 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:a_management/widget/widget.dart';
-import 'package:flutter/material.dart';
-import '../services/auth_service.dart';
-import '../management/management_screen.dart';
-import '../transaction/transaction_screen.dart';
-import '../data/data_transaction.dart';
-import 'dart:math';
+import 'package:a_management/services/database_service.dart';
 
 class TransactionScreen extends StatefulWidget {
-  const TransactionScreen({super.key});
+  final VoidCallback? onTransactionAdded;
+  const TransactionScreen({super.key, this.onTransactionAdded});
 
   @override
   State<TransactionScreen> createState() => _TransactionScreenState();
 }
 
 class _TransactionScreenState extends State<TransactionScreen> {
+  int _selectedPeriod = -1; // -1 = All, 0=Daily, 1=Weekly, 2=Monthly
+
+  double _income = 0;
+  double _expense = 0;
+  bool _summaryLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSummary();
+  }
+
+  Future<void> _loadSummary() async {
+    setState(() => _summaryLoading = true);
+    final summary = await DatabaseService().getSummaryByPeriod(_selectedPeriod);
+    if (mounted) {
+      setState(() {
+        _income = summary['income'] ?? 0;
+        _expense = summary['expense'] ?? 0;
+        _summaryLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF00C18A);
@@ -55,6 +75,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
             ),
           ),
           const SizedBox(height: 18),
+          // Income / Expense summary
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
@@ -69,13 +90,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.trending_up,
                           color: Color(0xFF00C18A),
                           size: 30,
                         ),
-                        SizedBox(height: 4),
-                        Text(
+                        const SizedBox(height: 4),
+                        const Text(
                           'Income',
                           style: TextStyle(
                             fontSize: 14,
@@ -83,14 +104,20 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             color: Colors.black54,
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          '\$6767.00',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
+                        const SizedBox(height: 6),
+                        _summaryLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 60,
+                                child: LinearProgressIndicator(),
+                              )
+                            : Text(
+                                '\$${_income.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
                       ],
                     ),
                   ),
@@ -106,13 +133,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(
+                        const Icon(
                           Icons.trending_down,
                           color: Colors.blue,
                           size: 30,
                         ),
-                        SizedBox(height: 4),
-                        Text(
+                        const SizedBox(height: 4),
+                        const Text(
                           'Expense',
                           style: TextStyle(
                             fontSize: 14,
@@ -120,15 +147,21 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                        SizedBox(height: 6),
-                        Text(
-                          '\$6767.00',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w800,
-                            color: Colors.blue,
-                          ),
-                        ),
+                        const SizedBox(height: 6),
+                        _summaryLoading
+                            ? const SizedBox(
+                                height: 20,
+                                width: 60,
+                                child: LinearProgressIndicator(),
+                              )
+                            : Text(
+                                '\$${_expense.toStringAsFixed(2)}',
+                                style: const TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  color: Colors.blue,
+                                ),
+                              ),
                       ],
                     ),
                   ),
@@ -147,30 +180,53 @@ class _TransactionScreenState extends State<TransactionScreen> {
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Container(
-                        decoration: const BoxDecoration(
-                          color: primary,
-                          borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(180),
-                              bottom: Radius.circular(180)),
+                  // Bộ lọc All / Daily / Weekly / Monthly
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _FilterChip(
+                          label: 'Tất cả',
+                          selected: _selectedPeriod == -1,
+                          onTap: () {
+                            setState(() => _selectedPeriod = -1);
+                            _loadSummary();
+                          },
                         ),
-                        child: Column(
-                          children: [
-                            SizedBox(height: 1),
-                            GestureDetector(
-                              child: Icon(Icons.filter_alt, size: 30),
-                              onTap: () {},
-                            ),
-                          ],
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Hôm nay',
+                          selected: _selectedPeriod == 0,
+                          onTap: () {
+                            setState(() => _selectedPeriod = 0);
+                            _loadSummary();
+                          },
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Tuần này',
+                          selected: _selectedPeriod == 1,
+                          onTap: () {
+                            setState(() => _selectedPeriod = 1);
+                            _loadSummary();
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        _FilterChip(
+                          label: 'Tháng này',
+                          selected: _selectedPeriod == 2,
+                          onTap: () {
+                            setState(() => _selectedPeriod = 2);
+                            _loadSummary();
+                          },
+                        ),
+                      ],
+                    ),
                   ),
-                  SizedBox(height: 10),
-                  Expanded(child: Displaytransaction().displayTransaction(-1)),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: _TransactionListView(period: _selectedPeriod),
+                  ),
                 ],
               ),
             ),
@@ -178,5 +234,50 @@ class _TransactionScreenState extends State<TransactionScreen> {
         ],
       ),
     );
+  }
+}
+
+class _FilterChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _FilterChip({
+    required this.label,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    const primary = Color(0xFF00C18A);
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+        decoration: BoxDecoration(
+          color: selected ? primary : const Color(0xFFE0F5EE),
+          borderRadius: BorderRadius.circular(24),
+        ),
+        child: Text(
+          label,
+          style: TextStyle(
+            fontSize: 14,
+            color: selected ? Colors.white : Colors.black54,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TransactionListView extends StatelessWidget {
+  final int period;
+  const _TransactionListView({required this.period});
+
+  @override
+  Widget build(BuildContext context) {
+    return Displaytransaction().displayTransaction(period);
   }
 }
