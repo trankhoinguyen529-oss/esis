@@ -312,6 +312,6 @@ class _HomeTransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Displaytransaction().displayTransaction(period);
+    return Displaytransaction().displayTransaction(period, 'all', () {});
   }
 }

@@ -1,3 +1,4 @@
+import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
 import 'add_transaction_screen.dart';
 import 'package:a_management/widget/widget.dart';
@@ -106,10 +107,8 @@ class ManagementScreen extends StatelessWidget {
                           () async {
                             final result = await Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => AddTransactionScreen(
+                                builder: (_) => Categorydetail(
                                   category: cat['label'] as String,
-                                  icon: cat['icon'] as IconData,
-                                  onSaved: onTransactionAdded,
                                 ),
                               ),
                             );

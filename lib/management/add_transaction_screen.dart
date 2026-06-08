@@ -6,13 +6,11 @@ import '../services/database_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
   final String category;
-  final IconData icon;
   final VoidCallback? onSaved;
 
   const AddTransactionScreen({
     super.key,
     required this.category,
-    required this.icon,
     this.onSaved,
   });
 
@@ -21,6 +19,20 @@ class AddTransactionScreen extends StatefulWidget {
 }
 
 class _AddTransactionScreenState extends State<AddTransactionScreen> {
+  static const Map<String, IconData> icons = {
+    'Food': Icons.restaurant,
+    'Transport': Icons.directions_bus,
+    'Medicine': Icons.medical_services,
+    'Groceries': Icons.local_grocery_store,
+    'Rent': Icons.home,
+    'Gifts': Icons.card_giftcard,
+    'Savings': Icons.savings,
+    'Entertainment': Icons.movie,
+    'Salary': Icons.wallet,
+    'Work': Icons.work,
+    'Gaming': Icons.sports_esports,
+    'Others': Icons.more_horiz,
+  };
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
@@ -74,7 +86,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     final item = TransactionItem(
-      icon: widget.icon,
+      icon: icons[widget.category]!,
       title: _titleCtrl.text.trim(),
       category: widget.category,
       time: timeStr,
@@ -139,7 +151,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     color: surface,
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(widget.icon, color: primary, size: 36),
+                  child: Icon(icons[widget.category], color: primary, size: 36),
                 ),
                 const SizedBox(height: 10),
                 Text(

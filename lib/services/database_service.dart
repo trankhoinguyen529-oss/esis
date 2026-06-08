@@ -90,6 +90,14 @@ class DatabaseService {
     return _filterByPeriod(all, period);
   }
 
+  Future<List<TransactionItem>> getTransactionsByCategory(
+      String category) async {
+    final all = await getAllTransactions();
+    return all.where((item) {
+      return (item.category == category);
+    }).toList();
+  }
+
   /// Tính income và expense theo kỳ
   Future<Map<String, double>> getSummaryByPeriod(int period) async {
     final items = period == -1
@@ -107,8 +115,7 @@ class DatabaseService {
     return {'income': income, 'expense': expense};
   }
 
-  List<TransactionItem> _filterByPeriod(
-      List<TransactionItem> all, int period) {
+  List<TransactionItem> _filterByPeriod(List<TransactionItem> all, int period) {
     final now = DateTime.now();
     return all.where((item) {
       if (period == 0) {
@@ -121,15 +128,13 @@ class DatabaseService {
         final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
         final endOfWeek = startOfWeek.add(const Duration(days: 6));
         final d = DateTime(item.date.year, item.date.month, item.date.day);
-        final s = DateTime(
-            startOfWeek.year, startOfWeek.month, startOfWeek.day);
-        final e =
-            DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
+        final s =
+            DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+        final e = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
         return !d.isBefore(s) && !d.isAfter(e);
       } else {
         // Monthly: cùng tháng & năm
-        return item.date.year == now.year &&
-            item.date.month == now.month;
+        return item.date.year == now.year && item.date.month == now.month;
       }
     }).toList();
   }
