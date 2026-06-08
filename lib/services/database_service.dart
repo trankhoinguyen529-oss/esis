@@ -41,7 +41,10 @@ class DatabaseService {
   /// Thêm giao dịch mới vào DB
   Future<int> insertTransaction(TransactionItem item) async {
     final db = await database;
-    return await db.insert('transactions', item.toMap());
+    final id = await db.insert('transactions', item.toMap());
+    // In lại toàn bộ bảng sau mỗi lần thêm để debug
+    await printAllTransactions();
+    return id;
   }
 
   /// Lấy tất cả giao dịch (không lọc) – dùng cho Transaction screen filter = -1
@@ -97,5 +100,50 @@ class DatabaseService {
         return item.date.year == now.year && item.date.month == now.month;
       }
     }).toList();
+  }
+
+  // ─────────────────────────────────────────────
+  // DEBUG ONLY – in toàn bộ bảng transactions ra console
+  // ─────────────────────────────────────────────
+  Future<void> printAllTransactions() async {
+    final db = await database;
+
+    // Lấy raw rows từ SQLite (không qua fromMap để thấy đúng dữ liệu thô)
+    final rows = await db.query('transactions', orderBy: 'id ASC');
+
+    if (rows.isEmpty) {
+      // ignore: avoid_print
+      print('══════════════════════════════════════════════');
+      // ignore: avoid_print
+      print('📋 [DB] Bảng transactions: TRỐNG');
+      // ignore: avoid_print
+      print('══════════════════════════════════════════════');
+      return;
+    }
+
+    // ignore: avoid_print
+    print('\n══════════════════════════════════════════════');
+    // ignore: avoid_print
+    print('📋 [DB] Bảng transactions – ${rows.length} bản ghi');
+    // ignore: avoid_print
+    print('──────────────────────────────────────────────');
+
+    for (final row in rows) {
+      final isExpense = (row['is_expense'] as int) == 1;
+      final typeIcon = isExpense ? '🔴 Chi tiêu' : '🟢 Thu nhập';
+      // ignore: avoid_print
+      print(
+        'ID: ${row['id']}'
+        ' | ${row['title']}'
+        ' (${row['category']})'
+        ' | $typeIcon'
+        ' | \$${(row['amount'] as num).toStringAsFixed(2)}'
+        ' | ${(row['date'] as String).substring(0, 10)}'
+        ' ${row['time']}',
+      );
+    }
+
+    // ignore: avoid_print
+    print('══════════════════════════════════════════════\n');
   }
 }

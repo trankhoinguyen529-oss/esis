@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 import 'login/splash_screen.dart';
+import 'services/database_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  // In bảng transactions ra debug console mỗi lần app khởi động
+  await DatabaseService().printAllTransactions();
+
   runApp(const MyApp());
 }
 
