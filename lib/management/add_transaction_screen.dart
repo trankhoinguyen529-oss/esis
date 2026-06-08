@@ -1,3 +1,4 @@
+import 'package:a_management/widget/appsnackbar.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../data/data_transaction.dart';
@@ -87,24 +88,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     if (mounted) {
       setState(() => _isSaving = false);
       widget.onSaved?.call();
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.check_circle, color: Colors.white),
-              const SizedBox(width: 10),
-              const Text(
-                'Đã lưu giao dịch!',
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-            ],
-          ),
-          backgroundColor: primary,
-          behavior: SnackBarBehavior.floating,
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        ),
-      );
+      Appsnackbar.success_snackbar(context, 'Transaction saved');
       Navigator.of(context).pop(true);
     }
   }
@@ -132,7 +116,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
           ),
         ),
         title: const Text(
-          'Thêm giao dịch',
+          'Add Transaction',
           style: TextStyle(
             color: Colors.black,
             fontWeight: FontWeight.w800,
@@ -235,8 +219,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 padding:
                                     const EdgeInsets.symmetric(vertical: 14),
                                 decoration: BoxDecoration(
-                                  color:
-                                      _isExpense ? Colors.blue : Colors.transparent,
+                                  color: _isExpense
+                                      ? Colors.blue
+                                      : Colors.transparent,
                                   borderRadius: BorderRadius.circular(16),
                                 ),
                                 child: Row(
@@ -275,8 +260,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       controller: _titleCtrl,
                       hint: 'Nhập tiêu đề giao dịch',
                       icon: Icons.edit_note,
-                      validator: (v) =>
-                          (v == null || v.trim().isEmpty) ? 'Vui lòng nhập tiêu đề' : null,
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'Vui lòng nhập tiêu đề'
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     // Amount field
