@@ -8,16 +8,12 @@ class CategoryTile {
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 150),
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF00C18A), Color(0xFF00A076)],
-          ),
+          color: Color(0xFF00C18A),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: const Color(0xFF00C18A).withValues(alpha: 0.3),
-              blurRadius: 8,
+              color: Colors.black.withValues(alpha: 0.3),
+              blurRadius: 4,
               offset: const Offset(0, 4),
             ),
           ],
@@ -28,11 +24,11 @@ class CategoryTile {
             Container(
               width: 44,
               height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: Colors.white, size: 26),
+              // decoration: BoxDecoration(
+              //   color: Colors.white.withValues(alpha: 0.2),
+              //   shape: BoxShape.circle,
+              // ),
+              child: Icon(icon, color: Colors.white, size: 40),
             ),
             const SizedBox(height: 10),
             Text(
@@ -41,7 +37,7 @@ class CategoryTile {
               style: const TextStyle(
                 color: Colors.white,
                 fontWeight: FontWeight.w700,
-                fontSize: 13,
+                fontSize: 16,
               ),
             ),
           ],

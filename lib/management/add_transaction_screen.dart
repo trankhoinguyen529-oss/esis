@@ -210,7 +210,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'Thu nhập',
+                                      'Income',
                                       style: TextStyle(
                                         color: !_isExpense
                                             ? Colors.white
@@ -248,7 +248,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                     ),
                                     const SizedBox(width: 6),
                                     Text(
-                                      'Chi tiêu',
+                                      'Expense',
                                       style: TextStyle(
                                         color: _isExpense
                                             ? Colors.white
@@ -266,19 +266,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                     ),
                     const SizedBox(height: 20),
                     // Title field
-                    _buildLabel('Tiêu đề'),
+                    _buildLabel('Title'),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _titleCtrl,
-                      hint: 'Nhập tiêu đề giao dịch',
+                      hint: 'Enter Title',
                       icon: Icons.edit_note,
                       validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Vui lòng nhập tiêu đề'
+                          ? 'Please Enter Title'
                           : null,
                     ),
                     const SizedBox(height: 16),
                     // Amount field
-                    _buildLabel('Số tiền (\$)'),
+                    _buildLabel('Amount (\$)'),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _amountCtrl,
@@ -292,18 +292,18 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ],
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'Vui lòng nhập số tiền';
+                          return 'Please Enter Amount';
                         }
                         final parsed = double.tryParse(v.trim());
                         if (parsed == null || parsed <= 0) {
-                          return 'Số tiền không hợp lệ';
+                          return 'Invalid Amount';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
                     // Date picker
-                    _buildLabel('Ngày giao dịch'),
+                    _buildLabel('Date'),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _pickDate,
@@ -358,7 +358,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                                 ),
                               )
                             : const Text(
-                                'Lưu giao dịch',
+                                'Transaction Saved',
                                 style: TextStyle(
                                   fontSize: 17,
                                   fontWeight: FontWeight.w800,

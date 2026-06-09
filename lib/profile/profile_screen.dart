@@ -1,5 +1,6 @@
 import 'package:a_management/profile/edit_profile.dart';
 import 'package:a_management/services/auth_service.dart';
+import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 
 import '../login/login_screen.dart';
@@ -13,35 +14,6 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final AuthService _authService = AuthService();
-  void _showLogoutDialog(BuildContext context) async {
-    final result = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Log out'),
-        content: const Text('Are you sure you want to log out?'),
-        actions: [
-          ElevatedButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('No'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            child: const Text('Yes'),
-          ),
-        ],
-      ),
-    );
-
-    if (result == true) {
-      await _authService.signOut();
-      if (!mounted) return;
-      Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -133,7 +105,19 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildMenuTile(
                     Icons.logout,
                     'Logout',
-                    onTap: () => _showLogoutDialog(context),
+                    onTap: () => ShowDialog().showLogoutDialog(
+                        context,
+                        'Log out',
+                        'Are you sure to log out',
+                        () {},
+                        () {}, () async {
+                      await _authService.signOut();
+                      if (!mounted) return;
+                      Navigator.of(context).pushAndRemoveUntil(
+                        MaterialPageRoute(builder: (_) => const LoginScreen()),
+                        (route) => false,
+                      );
+                    }),
                   ),
                 ],
               ),

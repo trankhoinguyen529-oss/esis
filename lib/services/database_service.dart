@@ -72,6 +72,19 @@ class DatabaseService {
     return id;
   }
 
+  // Xoá giao dịch trong DB của user hiện tại theo ID giao dich
+  Future<int?> deleteTransaction(int? id) async {
+    final db = await database;
+    await db.delete(
+      'transactions', // tên bảng
+      where: 'id = ?', // điều kiện
+      whereArgs: [id], // giá trị thay vào ?
+    );
+    // In lại toàn bộ bảng sau mỗi lần thêm để debug
+    await printAllTransactions();
+    return id;
+  }
+
   /// Cập nhật giao dịch hiện tại theo id và user hiện tại
   Future<int> updateTransaction(TransactionItem item) async {
     if (item.id == null) {

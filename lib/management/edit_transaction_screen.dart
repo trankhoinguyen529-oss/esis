@@ -1,4 +1,5 @@
 import 'package:a_management/widget/appsnackbar.dart';
+import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../data/data_transaction.dart';
@@ -63,7 +64,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       if (mounted) {
         Appsnackbar.success_snackbar(
           context,
-          'Không tìm thấy giao dịch để chỉnh sửa.',
+          'No Transaction Founded.',
         );
         Navigator.of(context).pop();
       }
@@ -132,7 +133,35 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     if (mounted) {
       setState(() => _isSaving = false);
       widget.onSaved?.call();
-      Appsnackbar.success_snackbar(context, 'Đã lưu thay đổi giao dịch');
+      Appsnackbar.success_snackbar(context, 'Changes Saved');
+      Navigator.of(context).pop(true);
+    }
+  }
+
+  Future<void> _delete() async {
+    //if (!_formKey.currentState!.validate()) return;
+    // if (item == null) return;
+
+    setState(() => _isSaving = true);
+
+    // final timeStr = item!.time;
+    // final updatedItem = TransactionItem(
+    //   id: item!.id,
+    //   icon: icons[selectedCategory] ?? icons['Others']!,
+    //   title: _titleCtrl.text.trim(),
+    //   category: selectedCategory,
+    //   time: timeStr,
+    //   date: selectedDate,
+    //   amount: double.parse(_amountCtrl.text.trim()),
+    //   isExpense: _isExpense,
+    // );
+
+    await db.deleteTransaction(item!.id);
+
+    if (mounted) {
+      setState(() => _isSaving = false);
+      widget.onSaved?.call();
+      Appsnackbar.success_snackbar(context, 'Transaction Deleted');
       Navigator.of(context).pop(true);
     }
   }
@@ -277,19 +306,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     const SizedBox(height: 8),
                     categoryField(),
                     const SizedBox(height: 8),
-                    _buildLabel('Tiêu đề'),
+                    _buildLabel('Title'),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _titleCtrl,
                       hint: selectedTitle,
                       icon: Icons.edit_note,
                       validator: (v) => (v == null || v.trim().isEmpty)
-                          ? 'Vui lòng nhập tiêu đề'
+                          ? 'Please Enter Title'
                           : null,
                     ),
                     const SizedBox(height: 16),
                     // Amount field
-                    _buildLabel('Số tiền (\$)'),
+                    _buildLabel('Amount (\$)'),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _amountCtrl,
@@ -303,18 +332,18 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       ],
                       validator: (v) {
                         if (v == null || v.trim().isEmpty) {
-                          return 'Vui lòng nhập số tiền';
+                          return 'Please Enter Amount';
                         }
                         final parsed = double.tryParse(v.trim());
                         if (parsed == null || parsed <= 0) {
-                          return 'Số tiền không hợp lệ';
+                          return 'Invalid Amount';
                         }
                         return null;
                       },
                     ),
                     const SizedBox(height: 16),
                     // Date picker
-                    _buildLabel('Ngày giao dịch'),
+                    _buildLabel('Date'),
                     const SizedBox(height: 8),
                     GestureDetector(
                       onTap: _pickDate,
@@ -348,7 +377,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     const SizedBox(height: 32),
                     // Save button
                     SizedBox(
-                      height: 56,
+                      height: 60,
                       child: ElevatedButton(
                         onPressed: _isSaving ? null : _save,
                         style: ElevatedButton.styleFrom(
@@ -369,9 +398,53 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                 ),
                               )
                             : const Text(
-                                'Lưu giao dịch',
+                                'Save',
                                 style: TextStyle(
-                                  fontSize: 17,
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    SizedBox(
+                      height: 60,
+                      child: ElevatedButton(
+                        onPressed: _isSaving
+                            ? null
+                            : () {
+                                ShowDialog().showLogoutDialog(
+                                  context,
+                                  'Delete',
+                                  'Are you sure to delete',
+                                  () {},
+                                  () {},
+                                  () {
+                                    _delete();
+                                  },
+                                );
+                              },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                'Delete',
+                                style: TextStyle(
+                                  fontSize: 20,
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
