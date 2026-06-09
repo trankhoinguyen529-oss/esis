@@ -406,10 +406,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     );
   }
 
-  DropdownButtonFormField<String> CategoryField(String selected) {
-    return DropdownButtonFormField<String>(
-      initialValue: selected,
-      decoration: InputDecoration(
+  DropdownMenu<String> CategoryField(String selected) {
+    return DropdownMenu<String>(
+      initialSelection: selected,
+      width: double.infinity,
+      inputDecorationTheme: InputDecorationTheme(
+        //prefixIcon: Icon(icon, color: primary, size: 22),
         filled: true,
         fillColor: Colors.white,
         contentPadding:
@@ -426,132 +428,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: primary, width: 1.5),
         ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
       ),
-      items: icons.entries.map((entry) {
-        return DropdownMenuItem(
-          value: entry.key,
-          child: Row(
-            children: [
-              Icon(
-                entry.value,
-                color: const Color(0xFF14C38E),
-              ),
-              const SizedBox(width: 12),
-              Text(entry.key),
-            ],
-          ),
+      dropdownMenuEntries: icons.entries.map((e) {
+        return DropdownMenuEntry(
+          value: e.key,
+          label: e.key,
+          leadingIcon: Icon(e.value),
         );
       }).toList(),
-      onChanged: (value) {
+      onSelected: (value) {
         setState(() {
           selected = value!;
         });
       },
     );
   }
-
-  // void showCategoryPicker(String selected) {
-  //   showModalBottomSheet(
-  //     context: context,
-  //     isScrollControlled: true,
-  //     backgroundColor: Colors.transparent,
-  //     builder: (context) {
-  //       return DraggableScrollableSheet(
-  //         expand: false,
-  //         initialChildSize: 0.45,
-  //         minChildSize: 0.3,
-  //         maxChildSize: 0.8,
-  //         builder: (context, scrollController) {
-  //           return Container(
-  //             decoration: const BoxDecoration(
-  //               color: Colors.white,
-  //               borderRadius: BorderRadius.vertical(
-  //                 top: Radius.circular(24),
-  //               ),
-  //             ),
-  //             child: Column(
-  //               children: [
-  //                 const SizedBox(height: 12),
-  //                 Container(
-  //                   width: 50,
-  //                   height: 5,
-  //                   decoration: BoxDecoration(
-  //                     color: Colors.grey,
-  //                     borderRadius: BorderRadius.circular(10),
-  //                   ),
-  //                 ),
-  //                 const SizedBox(height: 16),
-  //                 const Text(
-  //                   "Chọn danh mục",
-  //                   style: TextStyle(
-  //                     fontSize: 18,
-  //                     fontWeight: FontWeight.bold,
-  //                   ),
-  //                 ),
-  //                 const SizedBox(height: 16),
-  //                 Expanded(
-  //                   child: GridView.builder(
-  //                     controller: scrollController,
-  //                     padding: const EdgeInsets.all(16),
-  //                     itemCount: icons.length,
-  //                     gridDelegate:
-  //                         const SliverGridDelegateWithFixedCrossAxisCount(
-  //                       crossAxisCount: 3,
-  //                       childAspectRatio: 1,
-  //                       crossAxisSpacing: 12,
-  //                       mainAxisSpacing: 12,
-  //                     ),
-  //                     itemBuilder: (context, index) {
-  //                       final entry = icons.entries.elementAt(index);
-
-  //                       return InkWell(
-  //                         borderRadius: BorderRadius.circular(16),
-  //                         onTap: () {
-  //                           setState(() {
-  //                             selected = entry.key;
-  //                           });
-
-  //                           Navigator.pop(context);
-  //                         },
-  //                         child: Container(
-  //                           decoration: BoxDecoration(
-  //                             borderRadius: BorderRadius.circular(16),
-  //                             color: selected == entry.key
-  //                                 ? Colors.green.shade50
-  //                                 : Colors.grey.shade100,
-  //                             border: Border.all(
-  //                               color: selected == entry.key
-  //                                   ? Colors.green
-  //                                   : Colors.transparent,
-  //                             ),
-  //                           ),
-  //                           child: Column(
-  //                             mainAxisAlignment: MainAxisAlignment.center,
-  //                             children: [
-  //                               Icon(
-  //                                 entry.value,
-  //                                 size: 32,
-  //                                 color: Colors.green,
-  //                               ),
-  //                               const SizedBox(height: 8),
-  //                               Text(entry.key),
-  //                             ],
-  //                           ),
-  //                         ),
-  //                       );
-  //                     },
-  //                   ),
-  //                 ),
-  //               ],
-  //             ),
-  //           );
-  //         },
-  //       );
-  //     },
-  //   );
-  // }
 }
