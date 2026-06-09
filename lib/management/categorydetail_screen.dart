@@ -1,3 +1,4 @@
+import 'package:a_management/management/edit_transaction_screen.dart';
 import 'package:flutter/material.dart';
 import 'add_transaction_screen.dart';
 import 'package:a_management/widget/widget.dart';
@@ -101,13 +102,17 @@ class _CategorydetailState extends State<Categorydetail> {
                             child: IconButton(
                               icon: const Icon(Icons.add),
                               onPressed: () async {
-                                await Navigator.of(context).push(
+                                final result = await Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) => AddTransactionScreen(
                                       category: widget.category,
                                     ),
                                   ),
                                 );
+                                //debugPrint('******Result: $result');
+                                if (result == true) {
+                                  setState(() {});
+                                }
                               },
                             ),
                           ),
@@ -125,7 +130,19 @@ class _CategorydetailState extends State<Categorydetail> {
                         child: Displaytransaction().displayTransaction(
                           -1,
                           widget.category,
-                          () {},
+                          () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => EditTransactionScreen(
+                                  category: widget.category,
+                                ),
+                              ),
+                            );
+                            //debugPrint('******Result: $result');
+                            if (result == true) {
+                              setState(() {});
+                            }
+                          },
                         ),
                       ),
                     ],
