@@ -5,12 +5,12 @@ import '../data/data_transaction.dart';
 import '../services/database_service.dart';
 
 class EditTransactionScreen extends StatefulWidget {
-  final String category;
+  final int id;
   final VoidCallback? onSaved;
 
   const EditTransactionScreen({
     super.key,
-    required this.category,
+    required this.id,
     this.onSaved,
   });
 
@@ -37,17 +37,49 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   final _amountCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
 
-  DateTime _selectedDate = DateTime.now();
+  DateTime selectedDate = DateTime.now();
   bool _isExpense = true;
   bool _isSaving = false;
+  String selectedCategory = '';
+  String selectedTitle = '';
+  double selectedAmount = 0.00;
+  late DatabaseService db;
+  TransactionItem? item;
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
 
   @override
   void initState() {
+    // ✅ bỏ async
     super.initState();
-    _titleCtrl.text = widget.category;
+    db = DatabaseService();
+    _loadData(); // gọi hàm async riêng
+  }
+
+  Future<void> _loadData() async {
+    final result = await db.getTransactionItem_byID(widget.id);
+    if (result == null) {
+      if (mounted) {
+        Appsnackbar.success_snackbar(
+          context,
+          'Không tìm thấy giao dịch để chỉnh sửa.',
+        );
+        Navigator.of(context).pop();
+      }
+      return;
+    }
+
+    setState(() {
+      item = result;
+      _isExpense = item!.isExpense;
+      selectedCategory = item!.category;
+      selectedAmount = item!.amount;
+      selectedTitle = item!.title;
+      selectedDate = item!.date;
+      _titleCtrl.text = item!.title;
+      _amountCtrl.text = item!.amount.toStringAsFixed(2);
+    });
   }
 
   @override
@@ -60,7 +92,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
       context: context,
-      initialDate: _selectedDate,
+      initialDate: selectedDate,
       firstDate: DateTime(2020),
       lastDate: DateTime(2100),
       builder: (context, child) {
@@ -73,34 +105,34 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       },
     );
     if (picked != null) {
-      setState(() => _selectedDate = picked);
+      setState(() => selectedDate = picked);
     }
   }
 
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
+    if (item == null) return;
+
     setState(() => _isSaving = true);
 
-    final now = TimeOfDay.now();
-    final timeStr =
-        '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
-
-    final item = TransactionItem(
-      icon: icons[widget.category]!,
+    final timeStr = item!.time;
+    final updatedItem = TransactionItem(
+      id: item!.id,
+      icon: icons[selectedCategory] ?? icons['Others']!,
       title: _titleCtrl.text.trim(),
-      category: widget.category,
+      category: selectedCategory,
       time: timeStr,
-      date: _selectedDate,
+      date: selectedDate,
       amount: double.parse(_amountCtrl.text.trim()),
       isExpense: _isExpense,
     );
 
-    await DatabaseService().insertTransaction(item);
+    await db.updateTransaction(updatedItem);
 
     if (mounted) {
       setState(() => _isSaving = false);
       widget.onSaved?.call();
-      Appsnackbar.success_snackbar(context, 'Transaction saved');
+      Appsnackbar.success_snackbar(context, 'Đã lưu thay đổi giao dịch');
       Navigator.of(context).pop(true);
     }
   }
@@ -108,7 +140,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   @override
   Widget build(BuildContext context) {
     final dateStr =
-        '${_selectedDate.day.toString().padLeft(2, '0')}/${_selectedDate.month.toString().padLeft(2, '0')}/${_selectedDate.year}';
+        '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}';
 
     return Scaffold(
       backgroundColor: primary,
@@ -243,13 +275,13 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     // Title field
                     _buildLabel('Category'),
                     const SizedBox(height: 8),
-                    CategoryField('Food'),
+                    categoryField(),
                     const SizedBox(height: 8),
                     _buildLabel('Tiêu đề'),
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _titleCtrl,
-                      hint: 'Nhập tiêu đề giao dịch',
+                      hint: selectedTitle,
                       icon: Icons.edit_note,
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Vui lòng nhập tiêu đề'
@@ -261,7 +293,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     const SizedBox(height: 8),
                     _buildTextField(
                       controller: _amountCtrl,
-                      hint: '0.00',
+                      hint: '$selectedAmount',
                       icon: Icons.attach_money,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
@@ -406,41 +438,69 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     );
   }
 
-  DropdownMenu<String> CategoryField(String selected) {
-    return DropdownMenu<String>(
-      initialSelection: selected,
-      width: double.infinity,
-      inputDecorationTheme: InputDecorationTheme(
-        //prefixIcon: Icon(icon, color: primary, size: 22),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(
+  final _categoryKey = GlobalKey();
+
+  Widget categoryField() {
+    return InkWell(
+      key: _categoryKey,
+      borderRadius: BorderRadius.circular(16),
+      onTap: () async {
+        final box =
+            _categoryKey.currentContext!.findRenderObject() as RenderBox;
+        final offset = box.localToGlobal(Offset.zero);
+        final size = box.size;
+
+        final selected = await showMenu<String>(
+          context: context,
+          constraints: BoxConstraints(
+            minWidth: size.width,
+            maxWidth: size.width,
+            maxHeight: 200,
+          ),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          color: Colors.white,
+          position: RelativeRect.fromLTRB(
+            offset.dx,
+            offset.dy + size.height, // 4px gap bên dưới
+            offset.dx + size.width,
+            offset.dy + size.height,
+          ),
+          items: icons.entries.map((entry) {
+            return PopupMenuItem<String>(
+              value: entry.key,
+              height: 56,
+              child: Row(
+                children: [
+                  Icon(entry.value, color: const Color(0xFF14C38E)),
+                  const SizedBox(width: 12),
+                  Text(entry.key),
+                ],
+              ),
+            );
+          }).toList(),
+        );
+
+        if (selected != null) setState(() => selectedCategory = selected);
+      },
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.black12),
+          border: Border.all(color: Colors.black12),
         ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.black12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primary, width: 1.5),
+        child: Row(
+          children: [
+            Icon(icons[selectedCategory], color: const Color(0xFF14C38E)),
+            const SizedBox(width: 12),
+            Text(selectedCategory, style: const TextStyle(fontSize: 16)),
+            const Spacer(),
+            const Icon(Icons.keyboard_arrow_down),
+          ],
         ),
       ),
-      dropdownMenuEntries: icons.entries.map((e) {
-        return DropdownMenuEntry(
-          value: e.key,
-          label: e.key,
-          leadingIcon: Icon(e.value),
-        );
-      }).toList(),
-      onSelected: (value) {
-        setState(() {
-          selected = value!;
-        });
-      },
     );
   }
 }

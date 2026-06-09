@@ -72,6 +72,25 @@ class DatabaseService {
     return id;
   }
 
+  /// Cập nhật giao dịch hiện tại theo id và user hiện tại
+  Future<int> updateTransaction(TransactionItem item) async {
+    if (item.id == null) {
+      throw ArgumentError.value(
+          item, 'item', 'Transaction id must not be null');
+    }
+    final db = await database;
+    final map = item.toMap();
+    map['user_id'] = _currentUserId;
+    final count = await db.update(
+      'transactions',
+      map,
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [item.id, _currentUserId],
+    );
+    await printAllTransactions();
+    return count;
+  }
+
   /// Lấy tất cả giao dịch của user hiện tại
   Future<List<TransactionItem>> getAllTransactions() async {
     final db = await database;
@@ -82,6 +101,19 @@ class DatabaseService {
       orderBy: 'date DESC, time DESC',
     );
     return maps.map((m) => TransactionItem.fromMap(m)).toList();
+  }
+
+  /// Lấy giao dịch theo ID của user hiện tại
+  Future<TransactionItem?> getTransactionItem_byID(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'transactions',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, _currentUserId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return TransactionItem.fromMap(maps.first);
   }
 
   /// Lấy giao dịch theo kỳ: 0=Daily, 1=Weekly, 2=Monthly

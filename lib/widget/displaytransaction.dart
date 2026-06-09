@@ -3,9 +3,11 @@ import 'package:a_management/services/database_service.dart';
 import 'package:flutter/material.dart';
 
 class Displaytransaction {
+  //int transactionId = 0;
+
   /// Trả về Widget FutureBuilder hiển thị danh sách giao dịch theo kỳ.
   /// period: 0=Daily, 1=Weekly, 2=Monthly, -1=All
-  Widget displayTransaction(int period, String category, VoidCallback ontap) {
+  Widget displayTransaction(int period, String category, Function(int) ontap) {
     final Future<List<TransactionItem>> future;
     if (period == -1 && category == 'all')
       future = DatabaseService().getAllTransactions();
@@ -47,7 +49,10 @@ class Displaytransaction {
           itemCount: transactions.length,
           itemBuilder: (context, index) {
             final item = transactions[index];
-            return _TransactionItemWidget(item: item, ontap: ontap);
+            //transactionId = item.id!;
+            //debugPrint('******Result: $transactionId');
+            return _TransactionItemWidget(
+                item: item, ontap: () => ontap(item.id!));
           },
         );
       },

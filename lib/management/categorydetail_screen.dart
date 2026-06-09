@@ -17,6 +17,7 @@ class _CategorydetailState extends State<Categorydetail> {
   Widget build(BuildContext context) {
     const primary = Color(0xFF00C18A);
     const surface = Color(0xFFF3FFF8);
+    Displaytransaction displaytransaction = Displaytransaction();
 
     return Scaffold(
       backgroundColor: primary,
@@ -127,18 +128,19 @@ class _CategorydetailState extends State<Categorydetail> {
                             color: Colors.black45),
                       ),
                       Expanded(
-                        child: Displaytransaction().displayTransaction(
+                        child: displaytransaction.displayTransaction(
                           -1,
                           widget.category,
-                          () async {
+                          (int transactionId) async {
                             final result = await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => EditTransactionScreen(
-                                  category: widget.category,
+                                  id: transactionId,
                                 ),
                               ),
                             );
-                            //debugPrint('******Result: $result');
+
+                            //debugPrint('******Result: ${displaytransaction.transactionId}');
                             if (result == true) {
                               setState(() {});
                             }
