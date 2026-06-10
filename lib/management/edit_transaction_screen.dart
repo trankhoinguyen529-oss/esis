@@ -1,8 +1,9 @@
+import 'package:a_management/data/data_transaction.dart';
 import 'package:a_management/widget/appsnackbar.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../data/data_transaction.dart';
+import '../widget/category_item_icon.dart';
 import '../services/database_service.dart';
 
 class EditTransactionScreen extends StatefulWidget {
@@ -20,20 +21,6 @@ class EditTransactionScreen extends StatefulWidget {
 }
 
 class _EditTransactionScreenState extends State<EditTransactionScreen> {
-  static const Map<String, IconData> icons = {
-    'Food': Icons.restaurant,
-    'Transport': Icons.directions_bus,
-    'Medicine': Icons.medical_services,
-    'Groceries': Icons.local_grocery_store,
-    'Rent': Icons.home,
-    'Gifts': Icons.card_giftcard,
-    'Savings': Icons.savings,
-    'Entertainment': Icons.movie,
-    'Salary': Icons.wallet,
-    'Work': Icons.work,
-    'Gaming': Icons.sports_esports,
-    'Others': Icons.more_horiz,
-  };
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
@@ -119,7 +106,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     final timeStr = item!.time;
     final updatedItem = TransactionItem(
       id: item!.id,
-      icon: icons[selectedCategory] ?? icons['Others']!,
+      icon:
+          CategoryItem.icons[selectedCategory] ?? CategoryItem.icons['Others']!,
       title: _titleCtrl.text.trim(),
       category: selectedCategory,
       time: timeStr,
@@ -539,7 +527,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             offset.dx + size.width,
             offset.dy + size.height,
           ),
-          items: icons.entries.map((entry) {
+          items: CategoryItem.icons.entries.map((entry) {
             return PopupMenuItem<String>(
               value: entry.key,
               height: 56,
@@ -566,7 +554,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
         ),
         child: Row(
           children: [
-            Icon(icons[selectedCategory], color: const Color(0xFF14C38E)),
+            Icon(CategoryItem.icons[selectedCategory],
+                color: const Color(0xFF14C38E)),
             const SizedBox(width: 12),
             Text(selectedCategory, style: const TextStyle(fontSize: 16)),
             const Spacer(),
