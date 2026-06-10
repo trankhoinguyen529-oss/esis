@@ -55,8 +55,6 @@ class Textfield {
     );
   }
 
-  final _categoryKey = GlobalKey();
-
   Widget buildFormField({
     required BuildContext context,
     required Map<String, IconData?> icons,
@@ -64,45 +62,23 @@ class Textfield {
     required String selectedKey,
   }) {
     return InkWell(
-      key: _categoryKey,
-      borderRadius: BorderRadius.circular(16),
       onTap: () async {
-        final box =
-            _categoryKey.currentContext!.findRenderObject() as RenderBox;
-        final offset = box.localToGlobal(Offset.zero);
-        final size = box.size;
-
-        final selected = await showMenu<String>(
+        final selected = await showModalBottomSheet<String>(
           context: context,
-          constraints: BoxConstraints(
-            minWidth: size.width,
-            maxWidth: size.width,
-            maxHeight: 200,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
           ),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          color: Colors.white,
-          position: RelativeRect.fromLTRB(
-            offset.dx,
-            offset.dy + size.height, // 4px gap bên dưới
-            offset.dx + size.width,
-            offset.dy + size.height,
+          builder: (_) => ListView(
+            shrinkWrap: true,
+            children: icons.entries.map((entry) {
+              return ListTile(
+                leading: Icon(entry.value, color: const Color(0xFF14C38E)),
+                title: Text(entry.key),
+                onTap: () => Navigator.pop(context, entry.key),
+              );
+            }).toList(),
           ),
-          items: icons.entries.map((entry) {
-            return PopupMenuItem<String>(
-              value: entry.key,
-              height: 56,
-              child: Row(
-                children: [
-                  Icon(entry.value, color: const Color(0xFF14C38E)),
-                  const SizedBox(width: 12),
-                  Text(entry.key),
-                ],
-              ),
-            );
-          }).toList(),
         );
-
         if (selected != null) ifSelected(selected);
       },
       child: Container(

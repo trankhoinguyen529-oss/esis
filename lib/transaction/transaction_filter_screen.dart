@@ -21,14 +21,17 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
   final _amountCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
   final _textfield = Textfield();
+  final _pickdate = Pickdate();
 
-  DateTime selectedDate = DateTime.now();
+  DateTime selectedDateFrom = DateTime.now();
+  DateTime selectedDateTo = DateTime.now();
   bool _isExpense = true;
   bool _isSaving = false;
   String selectedCategory = '';
   String selectedTitle = '';
   String selectedType = '';
-  double selectedAmount = 0.00;
+  double selectedAmountFrom = 0.00;
+  double selectedAmountTo = 0.00;
   late DatabaseService db;
   TransactionItem? item;
 
@@ -45,30 +48,10 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
     super.dispose();
   }
 
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(primary: primary),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => selectedDate = picked);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final dateStr =
-        '${selectedDate.day.toString().padLeft(2, '0')}/${selectedDate.month.toString().padLeft(2, '0')}/${selectedDate.year}';
+        '${selectedDateTo.day.toString().padLeft(2, '0')}/${selectedDateTo.month.toString().padLeft(2, '0')}/${selectedDateTo.year}';
 
     return Scaffold(
       backgroundColor: primary,
@@ -114,17 +97,17 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                   children: [
                     const SizedBox(height: 20),
                     // // Income/Expense field
-                    // _textfield.buildLabel('Type'),
-                    // const SizedBox(height: 8),
-                    // _textfield.buildFormField(
-                    //   context: context,
-                    //   icons: TypeItem.icons,
-                    //   ifSelected: (selected) {
-                    //     setState(() => selectedType = selected);
-                    //   },
-                    //   selectedKey: selectedType,
-                    // ),
-                    // const SizedBox(height: 8),
+                    _textfield.buildLabel('Type'),
+                    const SizedBox(height: 8),
+                    _textfield.buildFormField(
+                      context: context,
+                      icons: TypeItem.icons,
+                      ifSelected: (selected) {
+                        setState(() => selectedType = selected);
+                      },
+                      selectedKey: selectedType,
+                    ),
+                    const SizedBox(height: 8),
                     // Category field
                     _textfield.buildLabel('Category'),
                     const SizedBox(height: 8),
@@ -149,12 +132,12 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                           : null,
                     ),
                     const SizedBox(height: 16),
-                    // Amount field
-                    _textfield.buildLabel('Amount (\$)'),
+                    // Amount field from
+                    _textfield.buildLabel('From(\$)'),
                     const SizedBox(height: 8),
                     _textfield.buildTextField(
                       controller: _amountCtrl,
-                      hint: '$selectedAmount',
+                      hint: '',
                       icon: Icons.attach_money,
                       keyboardType:
                           const TextInputType.numberWithOptions(decimal: true),
@@ -174,11 +157,81 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       },
                     ),
                     const SizedBox(height: 16),
-                    // Date picker
-                    _textfield.buildLabel('Date'),
+                    // Amount field up to
+                    _textfield.buildLabel('Up To(\$)'),
+                    const SizedBox(height: 8),
+                    _textfield.buildTextField(
+                      controller: _amountCtrl,
+                      hint: '',
+                      icon: Icons.attach_money,
+                      keyboardType:
+                          const TextInputType.numberWithOptions(decimal: true),
+                      inputFormatters: [
+                        FilteringTextInputFormatter.allow(
+                            RegExp(r'^\d+\.?\d{0,2}')),
+                      ],
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return 'Please Enter Amount';
+                        }
+                        final parsed = double.tryParse(v.trim());
+                        if (parsed == null || parsed <= 0) {
+                          return 'Invalid Amount';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    // Date picker from
+                    _textfield.buildLabel('From'),
                     const SizedBox(height: 8),
                     GestureDetector(
-                      onTap: _pickDate,
+                      onTap: () => _pickdate.PickDate(
+                        context: context,
+                        selectedDate: selectedDateTo,
+                        ifPicked: (picked) {
+                          setState(() => selectedDateTo = picked);
+                        },
+                      ),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 16, vertical: 16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(color: Colors.black12),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(Icons.calendar_today,
+                                color: primary, size: 22),
+                            const SizedBox(width: 12),
+                            Text(
+                              dateStr,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const Spacer(),
+                            const Icon(Icons.chevron_right,
+                                color: Colors.black38),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    // Date picker uo to
+                    _textfield.buildLabel('Up To'),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => _pickdate.PickDate(
+                        context: context,
+                        selectedDate: selectedDateTo,
+                        ifPicked: (picked) {
+                          setState(() => selectedDateTo = picked);
+                        },
+                      ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 16),
@@ -230,7 +283,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                                 ),
                               )
                             : const Text(
-                                'Save',
+                                'Apply',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
