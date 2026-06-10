@@ -51,7 +51,7 @@ class Displaytransaction {
             final item = transactions[index];
             //transactionId = item.id!;
             //debugPrint('******Result: $transactionId');
-            return _TransactionItemWidget(
+            return TransactionItemWidget(
                 item: item, ontap: () => ontap(item.id!));
           },
         );
@@ -60,10 +60,10 @@ class Displaytransaction {
   }
 }
 
-class _TransactionItemWidget extends StatelessWidget {
+class TransactionItemWidget extends StatelessWidget {
   final TransactionItem item;
   final VoidCallback ontap;
-  const _TransactionItemWidget({required this.item, required this.ontap});
+  const TransactionItemWidget({required this.item, required this.ontap});
   @override
   Widget build(BuildContext context) {
     final isExpense = item.isExpense;
