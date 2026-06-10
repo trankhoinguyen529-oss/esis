@@ -1,3 +1,4 @@
+import 'package:a_management/widget/category_item_icon.dart';
 import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
 import 'add_transaction_screen.dart';
@@ -7,25 +8,11 @@ class ManagementScreen extends StatelessWidget {
   final VoidCallback? onTransactionAdded;
   const ManagementScreen({super.key, this.onTransactionAdded});
 
-  static const _categories = [
-    {'icon': Icons.restaurant, 'label': 'Food'},
-    {'icon': Icons.directions_bus, 'label': 'Transport'},
-    {'icon': Icons.medical_services, 'label': 'Medicine'},
-    {'icon': Icons.local_grocery_store, 'label': 'Groceries'},
-    {'icon': Icons.home, 'label': 'Rent'},
-    {'icon': Icons.card_giftcard, 'label': 'Gifts'},
-    {'icon': Icons.savings, 'label': 'Savings'},
-    {'icon': Icons.movie, 'label': 'Entertainment'},
-    {'icon': Icons.wallet, 'label': 'Salary'},
-    {'icon': Icons.work, 'label': 'Work'},
-    {'icon': Icons.sports_esports, 'label': 'Gaming'},
-    {'icon': Icons.more_horiz, 'label': 'Others'},
-  ];
-
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF00C18A);
     const surface = Color(0xFFF3FFF8);
+    final entries = CategoryItem.icons.entries.toList();
 
     return Container(
       color: primary,
@@ -96,19 +83,19 @@ class ManagementScreen extends StatelessWidget {
                         mainAxisSpacing: 12,
                         childAspectRatio: 1,
                       ),
-                      itemCount: _categories.length,
+                      itemCount: entries.length,
                       itemBuilder: (context, index) {
-                        final cat = _categories[index];
+                        final cat = entries[index];
                         CategoryTile categoryTile = CategoryTile();
                         return categoryTile.build(
                           context,
-                          cat['icon'] as IconData,
-                          cat['label'] as String,
+                          cat.value as IconData,
+                          cat.key as String,
                           () async {
                             final result = await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => Categorydetail(
-                                  category: cat['label'] as String,
+                                  category: cat.key as String,
                                 ),
                               ),
                             );
