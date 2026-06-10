@@ -186,7 +186,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     child: Row(
                       children: [
                         _FilterChip(
-                          label: 'Tất cả',
+                          label: 'All',
                           selected: _selectedPeriod == -1,
                           onTap: () {
                             setState(() => _selectedPeriod = -1);
@@ -195,7 +195,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: 'Hôm nay',
+                          label: 'Daily',
                           selected: _selectedPeriod == 0,
                           onTap: () {
                             setState(() => _selectedPeriod = 0);
@@ -204,7 +204,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: 'Tuần này',
+                          label: 'Weekly',
                           selected: _selectedPeriod == 1,
                           onTap: () {
                             setState(() => _selectedPeriod = 1);
@@ -213,7 +213,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                         ),
                         const SizedBox(width: 8),
                         _FilterChip(
-                          label: 'Tháng này',
+                          label: 'Monthly',
                           selected: _selectedPeriod == 2,
                           onTap: () {
                             setState(() => _selectedPeriod = 2);
@@ -278,6 +278,6 @@ class _TransactionListView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Displaytransaction().displayTransaction(period);
+    return Displaytransaction().displayTransaction(period, 'all', (int i) {});
   }
 }

@@ -1,5 +1,7 @@
+import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
 import 'add_transaction_screen.dart';
+import 'package:a_management/widget/widget.dart';
 
 class ManagementScreen extends StatelessWidget {
   final VoidCallback? onTransactionAdded;
@@ -72,7 +74,7 @@ class ManagementScreen extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Chọn danh mục',
+                    'Choose Category',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w800,
@@ -81,7 +83,7 @@ class ManagementScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 6),
                   const Text(
-                    'Nhấn vào danh mục để thêm giao dịch',
+                    'Tap to view and add transactions',
                     style: TextStyle(fontSize: 13, color: Colors.black45),
                   ),
                   const SizedBox(height: 18),
@@ -97,16 +99,16 @@ class ManagementScreen extends StatelessWidget {
                       itemCount: _categories.length,
                       itemBuilder: (context, index) {
                         final cat = _categories[index];
-                        return _CategoryTile(
-                          icon: cat['icon'] as IconData,
-                          label: cat['label'] as String,
-                          onTap: () async {
+                        CategoryTile categoryTile = CategoryTile();
+                        return categoryTile.build(
+                          context,
+                          cat['icon'] as IconData,
+                          cat['label'] as String,
+                          () async {
                             final result = await Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => AddTransactionScreen(
+                                builder: (_) => Categorydetail(
                                   category: cat['label'] as String,
-                                  icon: cat['icon'] as IconData,
-                                  onSaved: onTransactionAdded,
                                 ),
                               ),
                             );
@@ -123,67 +125,6 @@ class ManagementScreen extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _CategoryTile extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final VoidCallback onTap;
-
-  const _CategoryTile({
-    required this.icon,
-    required this.label,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 150),
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF00C18A), Color(0xFF00A076)],
-          ),
-          borderRadius: BorderRadius.circular(24),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF00C18A).withValues(alpha: 0.3),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(icon, color: Colors.white, size: 26),
-            ),
-            const SizedBox(height: 10),
-            Text(
-              label,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: 13,
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

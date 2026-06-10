@@ -72,6 +72,38 @@ class DatabaseService {
     return id;
   }
 
+  // Xoá giao dịch trong DB của user hiện tại theo ID giao dich
+  Future<int?> deleteTransaction(int? id) async {
+    final db = await database;
+    await db.delete(
+      'transactions', // tên bảng
+      where: 'id = ?', // điều kiện
+      whereArgs: [id], // giá trị thay vào ?
+    );
+    // In lại toàn bộ bảng sau mỗi lần thêm để debug
+    await printAllTransactions();
+    return id;
+  }
+
+  /// Cập nhật giao dịch hiện tại theo id và user hiện tại
+  Future<int> updateTransaction(TransactionItem item) async {
+    if (item.id == null) {
+      throw ArgumentError.value(
+          item, 'item', 'Transaction id must not be null');
+    }
+    final db = await database;
+    final map = item.toMap();
+    map['user_id'] = _currentUserId;
+    final count = await db.update(
+      'transactions',
+      map,
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [item.id, _currentUserId],
+    );
+    await printAllTransactions();
+    return count;
+  }
+
   /// Lấy tất cả giao dịch của user hiện tại
   Future<List<TransactionItem>> getAllTransactions() async {
     final db = await database;
@@ -84,10 +116,31 @@ class DatabaseService {
     return maps.map((m) => TransactionItem.fromMap(m)).toList();
   }
 
+  /// Lấy giao dịch theo ID của user hiện tại
+  Future<TransactionItem?> getTransactionItem_byID(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'transactions',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, _currentUserId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return TransactionItem.fromMap(maps.first);
+  }
+
   /// Lấy giao dịch theo kỳ: 0=Daily, 1=Weekly, 2=Monthly
   Future<List<TransactionItem>> getTransactionsByPeriod(int period) async {
     final all = await getAllTransactions();
     return _filterByPeriod(all, period);
+  }
+
+  Future<List<TransactionItem>> getTransactionsByCategory(
+      String category) async {
+    final all = await getAllTransactions();
+    return all.where((item) {
+      return (item.category == category);
+    }).toList();
   }
 
   /// Tính income và expense theo kỳ
@@ -107,8 +160,7 @@ class DatabaseService {
     return {'income': income, 'expense': expense};
   }
 
-  List<TransactionItem> _filterByPeriod(
-      List<TransactionItem> all, int period) {
+  List<TransactionItem> _filterByPeriod(List<TransactionItem> all, int period) {
     final now = DateTime.now();
     return all.where((item) {
       if (period == 0) {
@@ -121,15 +173,13 @@ class DatabaseService {
         final startOfWeek = now.subtract(Duration(days: now.weekday - 1));
         final endOfWeek = startOfWeek.add(const Duration(days: 6));
         final d = DateTime(item.date.year, item.date.month, item.date.day);
-        final s = DateTime(
-            startOfWeek.year, startOfWeek.month, startOfWeek.day);
-        final e =
-            DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
+        final s =
+            DateTime(startOfWeek.year, startOfWeek.month, startOfWeek.day);
+        final e = DateTime(endOfWeek.year, endOfWeek.month, endOfWeek.day);
         return !d.isBefore(s) && !d.isAfter(e);
       } else {
         // Monthly: cùng tháng & năm
-        return item.date.year == now.year &&
-            item.date.month == now.month;
+        return item.date.year == now.year && item.date.month == now.month;
       }
     }).toList();
   }
