@@ -34,7 +34,7 @@ class Displaytransaction {
                 Icon(Icons.receipt_long, size: 64, color: Color(0xFFB0C4BE)),
                 SizedBox(height: 12),
                 Text(
-                  'Chưa có giao dịch nào',
+                  'No Transaction',
                   style: TextStyle(
                     fontSize: 16,
                     color: Color(0xFF8FA89C),

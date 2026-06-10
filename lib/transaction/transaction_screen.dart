@@ -1,3 +1,4 @@
+import 'package:a_management/transaction/transaction_filter_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:a_management/services/database_service.dart';
@@ -49,7 +50,26 @@ class _TransactionScreenState extends State<TransactionScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Row(
               children: [
-                const SizedBox(width: 40),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (context) => TransactionFilterScreen(),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: const BoxDecoration(
+                      color: surface,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.filter_list_outlined,
+                        color: Colors.black87),
+                  ),
+                ),
+                //const SizedBox(width: 40),
                 const Expanded(
                   child: Center(
                     child: Text(
@@ -185,6 +205,29 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     scrollDirection: Axis.horizontal,
                     child: Row(
                       children: [
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => TransactionFilterScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: BoxDecoration(
+                              color: primary,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              Icons.filter_list_outlined,
+                              color: Colors.white,
+                              size: 30,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
                         _FilterChip(
                           label: 'All',
                           selected: _selectedPeriod == -1,
@@ -220,6 +263,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                             _loadSummary();
                           },
                         ),
+                        const SizedBox(width: 8),
                       ],
                     ),
                   ),

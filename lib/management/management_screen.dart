@@ -1,4 +1,4 @@
-import 'package:a_management/widget/category_item_icon.dart';
+import 'package:a_management/widget/icon_map.dart';
 import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
 import 'add_transaction_screen.dart';

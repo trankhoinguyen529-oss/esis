@@ -16,3 +16,11 @@ class CategoryItem {
     'Others': Icons.more_horiz,
   };
 }
+
+class TypeItem {
+  static const Map<String, IconData> icons = {
+    'All': Icons.menu,
+    'Income': Icons.trending_up,
+    'Expense': Icons.trending_down,
+  };
+}

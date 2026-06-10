@@ -3,7 +3,7 @@ import 'package:a_management/widget/appsnackbar.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../widget/category_item_icon.dart';
+import '../widget/icon_map.dart';
 import '../services/database_service.dart';
 
 class EditTransactionScreen extends StatefulWidget {
@@ -24,6 +24,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   final _formKey = GlobalKey<FormState>();
   final _amountCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
+  final _textField = Textfield();
+  final _pickdate = Pickdate();
 
   DateTime selectedDate = DateTime.now();
   bool _isExpense = true;
@@ -75,26 +77,6 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     _amountCtrl.dispose();
     _titleCtrl.dispose();
     super.dispose();
-  }
-
-  Future<void> _pickDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDate,
-      firstDate: DateTime(2020),
-      lastDate: DateTime(2100),
-      builder: (context, child) {
-        return Theme(
-          data: ThemeData.light().copyWith(
-            colorScheme: const ColorScheme.light(primary: primary),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() => selectedDate = picked);
-    }
   }
 
   Future<void> _save() async {
@@ -290,13 +272,20 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     ),
                     const SizedBox(height: 20),
                     // Title field
-                    _buildLabel('Category'),
+                    _textField.buildLabel('Category'),
                     const SizedBox(height: 8),
-                    categoryField(),
+                    _textField.buildFormField(
+                      context: context,
+                      icons: CategoryItem.icons,
+                      ifSelected: (selected) {
+                        setState(() => selectedCategory = selected);
+                      },
+                      selectedKey: selectedCategory,
+                    ),
                     const SizedBox(height: 8),
-                    _buildLabel('Title'),
+                    _textField.buildLabel('Title'),
                     const SizedBox(height: 8),
-                    _buildTextField(
+                    _textField.buildTextField(
                       controller: _titleCtrl,
                       hint: selectedTitle,
                       icon: Icons.edit_note,
@@ -306,9 +295,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     ),
                     const SizedBox(height: 16),
                     // Amount field
-                    _buildLabel('Amount (\$)'),
+                    _textField.buildLabel('Amount (\$)'),
                     const SizedBox(height: 8),
-                    _buildTextField(
+                    _textField.buildTextField(
                       controller: _amountCtrl,
                       hint: '$selectedAmount',
                       icon: Icons.attach_money,
@@ -331,10 +320,16 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     ),
                     const SizedBox(height: 16),
                     // Date picker
-                    _buildLabel('Date'),
+                    _textField.buildLabel('Date'),
                     const SizedBox(height: 8),
                     GestureDetector(
-                      onTap: _pickDate,
+                      onTap: () => _pickdate.PickDate(
+                        context: context,
+                        selectedDate: selectedDate,
+                        ifPicked: (picked) {
+                          setState(() => selectedDate = picked);
+                        },
+                      ),
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 16, vertical: 16),
@@ -444,124 +439,6 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
             ),
           ),
         ],
-      ),
-    );
-  }
-
-  Widget _buildLabel(String text) {
-    return Text(
-      text,
-      style: const TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.w700,
-        color: Colors.black54,
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-    List<TextInputFormatter>? inputFormatters,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      inputFormatters: inputFormatters,
-      validator: validator,
-      decoration: InputDecoration(
-        hintText: hint,
-        prefixIcon: Icon(icon, color: primary, size: 22),
-        filled: true,
-        fillColor: Colors.white,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.black12),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.black12),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: primary, width: 1.5),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(16),
-          borderSide: const BorderSide(color: Colors.redAccent),
-        ),
-      ),
-    );
-  }
-
-  final _categoryKey = GlobalKey();
-
-  Widget categoryField() {
-    return InkWell(
-      key: _categoryKey,
-      borderRadius: BorderRadius.circular(16),
-      onTap: () async {
-        final box =
-            _categoryKey.currentContext!.findRenderObject() as RenderBox;
-        final offset = box.localToGlobal(Offset.zero);
-        final size = box.size;
-
-        final selected = await showMenu<String>(
-          context: context,
-          constraints: BoxConstraints(
-            minWidth: size.width,
-            maxWidth: size.width,
-            maxHeight: 200,
-          ),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          color: Colors.white,
-          position: RelativeRect.fromLTRB(
-            offset.dx,
-            offset.dy + size.height, // 4px gap bên dưới
-            offset.dx + size.width,
-            offset.dy + size.height,
-          ),
-          items: CategoryItem.icons.entries.map((entry) {
-            return PopupMenuItem<String>(
-              value: entry.key,
-              height: 56,
-              child: Row(
-                children: [
-                  Icon(entry.value, color: const Color(0xFF14C38E)),
-                  const SizedBox(width: 12),
-                  Text(entry.key),
-                ],
-              ),
-            );
-          }).toList(),
-        );
-
-        if (selected != null) setState(() => selectedCategory = selected);
-      },
-      child: Container(
-        height: 60,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: Colors.black12),
-        ),
-        child: Row(
-          children: [
-            Icon(CategoryItem.icons[selectedCategory],
-                color: const Color(0xFF14C38E)),
-            const SizedBox(width: 12),
-            Text(selectedCategory, style: const TextStyle(fontSize: 16)),
-            const Spacer(),
-            const Icon(Icons.keyboard_arrow_down),
-          ],
-        ),
       ),
     );
   }
