@@ -1,9 +1,8 @@
 import 'package:flutter/material.dart';
 
-class Pickdate{
+class Pickdate {
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
-
 
   Future<void> PickDate({
     required BuildContext context,

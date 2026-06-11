@@ -19,7 +19,7 @@ class CategoryItem {
 
 class TypeItem {
   static const Map<String, IconData> icons = {
-    'All': Icons.menu,
+    //'All': Icons.menu,
     'Income': Icons.trending_up,
     'Expense': Icons.trending_down,
   };

@@ -274,7 +274,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                     // Title field
                     _textField.buildLabel('Category'),
                     const SizedBox(height: 8),
-                    _textField.buildFormField(
+                    _textField.buildFormField_1(
                       context: context,
                       icons: CategoryItem.icons,
                       ifSelected: (selected) {

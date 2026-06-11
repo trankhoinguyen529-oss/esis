@@ -128,25 +128,30 @@ class _CategorydetailState extends State<Categorydetail> {
                             color: Colors.black45),
                       ),
                       Expanded(
-                        child: displaytransaction.displayTransaction(
-                          -1,
-                          widget.category,
-                          (int transactionId) async {
-                            final result = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => EditTransactionScreen(
-                                  id: transactionId,
-                                ),
+                          child: displaytransaction.displayTransaction(
+                        period: -1,
+                        type: '',
+                        categories: {widget.category},
+                        title: '',
+                        amountFrom: 0.00,
+                        amountTo: 100000000000000.00,
+                        dateFrom: DateTime(2025, 1, 1),
+                        dateTo: DateTime(2027, 1, 1),
+                        ontap: (int transactionId) async {
+                          final result = await Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => EditTransactionScreen(
+                                id: transactionId,
                               ),
-                            );
+                            ),
+                          );
 
-                            //debugPrint('******Result: ${displaytransaction.transactionId}');
-                            if (result == true) {
-                              setState(() {});
-                            }
-                          },
-                        ),
-                      ),
+                          //debugPrint('******Result: ${displaytransaction.transactionId}');
+                          if (result == true) {
+                            setState(() {});
+                          }
+                        },
+                      )),
                     ],
                   ),
                 ),

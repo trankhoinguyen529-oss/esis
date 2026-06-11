@@ -7,14 +7,23 @@ class Displaytransaction {
 
   /// Trả về Widget FutureBuilder hiển thị danh sách giao dịch theo kỳ.
   /// period: 0=Daily, 1=Weekly, 2=Monthly, -1=All
-  Widget displayTransaction(int period, String category, Function(int) ontap) {
+  Widget displayTransaction({
+    required int period,
+    required String type,
+    required Set<String> categories,
+    required String title,
+    required double amountFrom,
+    required double amountTo,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+    required Function(int) ontap,
+  }) {
     final Future<List<TransactionItem>> future;
-    if (period == -1 && category == 'all')
-      future = DatabaseService().getAllTransactions();
-    else if (period != -1 && category == 'all')
+    if (period == -1) {
+      future = DatabaseService().getTransactionsByFilter(
+          type, categories, title, amountFrom, amountTo, dateFrom, dateTo);
+    } else
       future = DatabaseService().getTransactionsByPeriod(period);
-    else
-      future = DatabaseService().getTransactionsByCategory(category);
 
     return FutureBuilder<List<TransactionItem>>(
       future: future,

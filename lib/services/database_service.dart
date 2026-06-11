@@ -135,11 +135,33 @@ class DatabaseService {
     return _filterByPeriod(all, period);
   }
 
+  // Lấy giao dịch theo category
   Future<List<TransactionItem>> getTransactionsByCategory(
       String category) async {
     final all = await getAllTransactions();
     return all.where((item) {
       return (item.category == category);
+    }).toList();
+  }
+
+  // Lấy giao dịch theo bộ lọc
+  Future<List<TransactionItem>> getTransactionsByFilter(
+    String type,
+    Set<String> categories,
+    String title,
+    double amountFrom,
+    double amountTo,
+    DateTime dateFrom,
+    DateTime dateTo,
+  ) async {
+    final all = await getAllTransactions();
+    bool isExpense = (type == '1') ? true : false;
+    return all.where((item) {
+      return ((item.title == title || title == '') &&
+          (item.amount <= amountTo && item.amount >= amountFrom) &&
+          (item.isExpense == isExpense || type == '') &&
+          (!(item.date).isBefore(dateFrom) && !(item.date).isAfter(dateTo)) &&
+          (categories.contains(item.category) || categories.isEmpty));
     }).toList();
   }
 

@@ -5,7 +5,24 @@ import 'package:a_management/services/database_service.dart';
 
 class TransactionScreen extends StatefulWidget {
   final VoidCallback? onTransactionAdded;
-  const TransactionScreen({super.key, this.onTransactionAdded});
+  DateTime selectedDateFrom = DateTime(2025, 1, 1);
+  DateTime selectedDateTo = DateTime(2027, 1, 1);
+  Set<String> selectedCategories = {};
+  String selectedTitle = '';
+  String selectedType = '';
+  double selectedAmountFrom = 0.00;
+  double selectedAmountTo = 100000000000.00;
+  TransactionScreen({
+    super.key,
+    this.onTransactionAdded,
+    required this.selectedDateFrom,
+    required this.selectedDateTo,
+    required this.selectedCategories,
+    required this.selectedTitle,
+    required this.selectedType,
+    required this.selectedAmountFrom,
+    required this.selectedAmountTo,
+  });
 
   @override
   State<TransactionScreen> createState() => _TransactionScreenState();
@@ -22,6 +39,26 @@ class _TransactionScreenState extends State<TransactionScreen> {
   void initState() {
     super.initState();
     _loadSummary();
+  }
+
+  Future<void> _openFilter() async {
+    final result = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => TransactionFilterScreen(),
+      ),
+    );
+
+    if (result != null) {
+      setState(() {
+        widget.selectedType = result['type'];
+        widget.selectedCategories = result['categories'];
+        widget.selectedTitle = result['title'];
+        widget.selectedAmountFrom = result['amountFrom'];
+        widget.selectedAmountTo = result['amountTo'];
+        widget.selectedDateFrom = result['dateFrom'];
+        widget.selectedDateTo = result['dateTo'];
+      });
+    }
   }
 
   Future<void> _loadSummary() async {
@@ -51,13 +88,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
             child: Row(
               children: [
                 GestureDetector(
-                  onTap: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (context) => TransactionFilterScreen(),
-                      ),
-                    );
-                  },
+                  onTap: _openFilter,
                   child: Container(
                     width: 40,
                     height: 40,
@@ -203,73 +234,47 @@ class _TransactionScreenState extends State<TransactionScreen> {
                   // Bộ lọc All / Daily / Weekly / Monthly
                   SingleChildScrollView(
                     scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (context) => TransactionFilterScreen(),
-                              ),
-                            );
-                          },
-                          child: Container(
-                            width: 40,
-                            height: 40,
-                            decoration: BoxDecoration(
-                              color: primary,
-                              shape: BoxShape.circle,
-                            ),
-                            child: Icon(
-                              Icons.filter_list_outlined,
-                              color: Colors.white,
-                              size: 30,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _FilterChip(
-                          label: 'All',
-                          selected: _selectedPeriod == -1,
-                          onTap: () {
-                            setState(() => _selectedPeriod = -1);
-                            _loadSummary();
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        _FilterChip(
-                          label: 'Daily',
-                          selected: _selectedPeriod == 0,
-                          onTap: () {
-                            setState(() => _selectedPeriod = 0);
-                            _loadSummary();
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        _FilterChip(
-                          label: 'Weekly',
-                          selected: _selectedPeriod == 1,
-                          onTap: () {
-                            setState(() => _selectedPeriod = 1);
-                            _loadSummary();
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                        _FilterChip(
-                          label: 'Monthly',
-                          selected: _selectedPeriod == 2,
-                          onTap: () {
-                            setState(() => _selectedPeriod = 2);
-                            _loadSummary();
-                          },
-                        ),
-                        const SizedBox(width: 8),
-                      ],
-                    ),
+                    // child: Row(
+                    //   children: [
+                    //     GestureDetector(
+                    //       onTap: () {
+                    //         Navigator.of(context).push(
+                    //           MaterialPageRoute(
+                    //             builder: (context) => TransactionFilterScreen(),
+                    //           ),
+                    //         );
+                    //       },
+                    //       child: Container(
+                    //         width: 40,
+                    //         height: 40,
+                    //         decoration: BoxDecoration(
+                    //           color: primary,
+                    //           shape: BoxShape.circle,
+                    //         ),
+                    //         child: Icon(
+                    //           Icons.filter_list_outlined,
+                    //           color: Colors.white,
+                    //           size: 30,
+                    //         ),
+                    //       ),
+                    //     ),
+
+                    //   ],
+                    // ),
                   ),
                   const SizedBox(height: 12),
                   Expanded(
-                    child: _TransactionListView(period: _selectedPeriod),
+                    child: Displaytransaction().displayTransaction(
+                      period: -1,
+                      type: widget.selectedType,
+                      categories: widget.selectedCategories,
+                      title: widget.selectedTitle,
+                      amountFrom: widget.selectedAmountFrom,
+                      amountTo: widget.selectedAmountTo,
+                      dateFrom: widget.selectedDateFrom,
+                      dateTo: widget.selectedDateTo,
+                      ontap: (int i) {},
+                    ),
                   ),
                 ],
               ),
@@ -281,47 +286,37 @@ class _TransactionScreenState extends State<TransactionScreen> {
   }
 }
 
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final VoidCallback onTap;
-  const _FilterChip({
-    required this.label,
-    required this.selected,
-    required this.onTap,
-  });
+// class _FilterChip extends StatelessWidget {
+//   final String label;
+//   final bool selected;
+//   final VoidCallback onTap;
+//   const _FilterChip({
+//     required this.label,
+//     required this.selected,
+//     required this.onTap,
+//   });
 
-  @override
-  Widget build(BuildContext context) {
-    const primary = Color(0xFF00C18A);
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
-        decoration: BoxDecoration(
-          color: selected ? primary : const Color(0xFFE0F5EE),
-          borderRadius: BorderRadius.circular(24),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-            fontSize: 14,
-            color: selected ? Colors.white : Colors.black54,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _TransactionListView extends StatelessWidget {
-  final int period;
-  const _TransactionListView({required this.period});
-
-  @override
-  Widget build(BuildContext context) {
-    return Displaytransaction().displayTransaction(period, 'all', (int i) {});
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     const primary = Color(0xFF00C18A);
+//     return GestureDetector(
+//       onTap: onTap,
+//       child: AnimatedContainer(
+//         duration: const Duration(milliseconds: 200),
+//         padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 10),
+//         decoration: BoxDecoration(
+//           color: selected ? primary : const Color(0xFFE0F5EE),
+//           borderRadius: BorderRadius.circular(24),
+//         ),
+//         child: Text(
+//           label,
+//           style: TextStyle(
+//             fontSize: 14,
+//             color: selected ? Colors.white : Colors.black54,
+//             fontWeight: FontWeight.w700,
+//           ),
+//         ),
+//       ),
+//     );
+//   }
+// }

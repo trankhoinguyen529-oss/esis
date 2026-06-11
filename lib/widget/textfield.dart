@@ -55,7 +55,7 @@ class Textfield {
     );
   }
 
-  Widget buildFormField({
+  Widget buildFormField_1({
     required BuildContext context,
     required Map<String, IconData?> icons,
     required Function(String) ifSelected,
@@ -94,6 +94,107 @@ class Textfield {
             Icon(icons[selectedKey], color: const Color(0xFF14C38E)),
             const SizedBox(width: 12),
             Text(selectedKey, style: const TextStyle(fontSize: 16)),
+            const Spacer(),
+            const Icon(Icons.keyboard_arrow_down),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget buildFormField_M({
+    required BuildContext context,
+    required Map<String, IconData?> icons,
+    required Function(Set<String>) ifSelected, // ✅ đổi sang Set
+    required Set<String> selectedKeys, // ✅ đổi sang Set
+  }) {
+    return InkWell(
+      onTap: () async {
+        Set<String> tempSelected =
+            Set.from(selectedKeys); // ✅ copy set hiện tại
+
+        final result = await showModalBottomSheet<Set<String>>(
+          context: context,
+          isScrollControlled: true,
+          shape: const RoundedRectangleBorder(
+            borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+          ),
+          builder: (_) => StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Header
+                  Padding(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, null),
+                          child: const Text('Cancel'),
+                        ),
+                        TextButton(
+                          onPressed: () => Navigator.pop(context, tempSelected),
+                          child: const Text('Done'),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const Divider(height: 1),
+                  ...icons.entries.map((entry) {
+                    final isSelected = tempSelected.contains(entry.key);
+                    return ListTile(
+                      leading:
+                          Icon(entry.value, color: const Color(0xFF14C38E)),
+                      title: Text(entry.key),
+                      trailing: isSelected
+                          ? const Icon(Icons.check, color: Color(0xFF14C38E))
+                          : null,
+                      onTap: () {
+                        setSheetState(() {
+                          if (isSelected) {
+                            tempSelected.remove(entry.key);
+                          } else {
+                            tempSelected.add(entry.key);
+                          }
+                        });
+                      },
+                    );
+                  }),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
+        );
+
+        if (result != null) ifSelected(result); // ✅ trả về Set
+      },
+      child: Container(
+        height: 60,
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: Row(
+          children: [
+            // ✅ hiện icon của item đầu tiên nếu có
+            Icon(
+              selectedKeys.isEmpty ? null : icons[selectedKeys.first],
+              color: const Color(0xFF14C38E),
+            ),
+            const SizedBox(width: 12),
+            // ✅ hiện tất cả item đã chọn
+            Text(
+              selectedKeys.isEmpty
+                  ? '--Multiple Pick--'
+                  : selectedKeys.join(', '),
+              style: const TextStyle(fontSize: 16),
+            ),
             const Spacer(),
             const Icon(Icons.keyboard_arrow_down),
           ],

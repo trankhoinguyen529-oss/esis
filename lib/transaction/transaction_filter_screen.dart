@@ -1,4 +1,5 @@
 import 'package:a_management/data/data_transaction.dart';
+import 'package:a_management/transaction/transaction_screen.dart';
 import 'package:a_management/widget/appsnackbar.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
@@ -18,22 +19,28 @@ class TransactionFilterScreen extends StatefulWidget {
 
 class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _amountCtrl = TextEditingController();
+  final _amountFromCtrl = TextEditingController();
+  final _amountToCtrl = TextEditingController();
   final _titleCtrl = TextEditingController();
   final _textfield = Textfield();
-  final _pickdate = Pickdate();
+  final _pickdateFrom = Pickdate();
+  final _pickdateTo = Pickdate();
 
-  DateTime selectedDateFrom = DateTime.now();
-  DateTime selectedDateTo = DateTime.now();
+  DateTime selectedDateFrom = DateTime(2020, 1, 1);
+  DateTime selectedDateTo = DateTime(2030, 1, 1);
   bool _isExpense = true;
   bool _isSaving = false;
-  String selectedCategory = '';
+  Set<String> selectedCategories = {};
   String selectedTitle = '';
   String selectedType = '';
   double selectedAmountFrom = 0.00;
-  double selectedAmountTo = 0.00;
+  double selectedAmountTo = 1000000000000.00;
   late DatabaseService db;
   TransactionItem? item;
+
+  double _income = 0;
+  double _expense = 0;
+  bool _summaryLoading = true;
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
@@ -43,14 +50,30 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
 
   @override
   void dispose() {
-    _amountCtrl.dispose();
+    _amountFromCtrl.dispose();
+    _amountToCtrl.dispose();
     _titleCtrl.dispose();
     super.dispose();
   }
 
+  Future<void> _loadSummary() async {
+    setState(() => _summaryLoading = true);
+    final summary = await DatabaseService().getSummaryByPeriod(-1);
+    if (mounted) {
+      setState(() {
+        _income = summary['income'] ?? 0;
+        _expense = summary['expense'] ?? 0;
+        _summaryLoading = false;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final dateStr =
+    // Thêm dateStr riêng
+    final dateStrFrom =
+        '${selectedDateFrom.day.toString().padLeft(2, '0')}/${selectedDateFrom.month.toString().padLeft(2, '0')}/${selectedDateFrom.year}';
+    final dateStrTo =
         '${selectedDateTo.day.toString().padLeft(2, '0')}/${selectedDateTo.month.toString().padLeft(2, '0')}/${selectedDateTo.year}';
 
     return Scaffold(
@@ -99,7 +122,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     // // Income/Expense field
                     _textfield.buildLabel('Type'),
                     const SizedBox(height: 8),
-                    _textfield.buildFormField(
+                    _textfield.buildFormField_1(
                       context: context,
                       icons: TypeItem.icons,
                       ifSelected: (selected) {
@@ -111,13 +134,13 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     // Category field
                     _textfield.buildLabel('Category'),
                     const SizedBox(height: 8),
-                    _textfield.buildFormField(
+                    _textfield.buildFormField_M(
                       context: context,
                       icons: CategoryItem.icons,
                       ifSelected: (selected) {
-                        setState(() => selectedCategory = selected);
+                        setState(() => selectedCategories = selected);
                       },
-                      selectedKey: selectedCategory,
+                      selectedKeys: selectedCategories,
                     ),
                     const SizedBox(height: 8),
                     // Title field
@@ -136,7 +159,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     _textfield.buildLabel('From(\$)'),
                     const SizedBox(height: 8),
                     _textfield.buildTextField(
-                      controller: _amountCtrl,
+                      controller: _amountFromCtrl,
                       hint: '',
                       icon: Icons.attach_money,
                       keyboardType:
@@ -161,7 +184,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     _textfield.buildLabel('Up To(\$)'),
                     const SizedBox(height: 8),
                     _textfield.buildTextField(
-                      controller: _amountCtrl,
+                      controller: _amountToCtrl,
                       hint: '',
                       icon: Icons.attach_money,
                       keyboardType:
@@ -186,11 +209,11 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     _textfield.buildLabel('From'),
                     const SizedBox(height: 8),
                     GestureDetector(
-                      onTap: () => _pickdate.PickDate(
+                      onTap: () => _pickdateFrom.PickDate(
                         context: context,
-                        selectedDate: selectedDateTo,
+                        selectedDate: selectedDateFrom,
                         ifPicked: (picked) {
-                          setState(() => selectedDateTo = picked);
+                          setState(() => selectedDateFrom = picked);
                         },
                       ),
                       child: Container(
@@ -207,7 +230,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                                 color: primary, size: 22),
                             const SizedBox(width: 12),
                             Text(
-                              dateStr,
+                              dateStrFrom,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -221,11 +244,11 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    // Date picker uo to
+                    // Date picker up to
                     _textfield.buildLabel('Up To'),
                     const SizedBox(height: 8),
                     GestureDetector(
-                      onTap: () => _pickdate.PickDate(
+                      onTap: () => _pickdateTo.PickDate(
                         context: context,
                         selectedDate: selectedDateTo,
                         ifPicked: (picked) {
@@ -246,7 +269,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                                 color: primary, size: 22),
                             const SizedBox(width: 12),
                             Text(
-                              dateStr,
+                              dateStrTo,
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,
@@ -264,7 +287,21 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     SizedBox(
                       height: 60,
                       child: ElevatedButton(
-                        onPressed: null,
+                        onPressed: () {
+                          Navigator.of(context).pop({
+                            'type': selectedType,
+                            'categories': selectedCategories,
+                            'title': _titleCtrl.text.trim(), // ✅
+                            'amountFrom':
+                                double.tryParse(_amountFromCtrl.text.trim()) ??
+                                    0.00, // ✅
+                            'amountTo':
+                                double.tryParse(_amountToCtrl.text.trim()) ??
+                                    100000000000.00, // ✅
+                            'dateFrom': selectedDateFrom,
+                            'dateTo': selectedDateTo,
+                          });
+                        },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: primary,
                           foregroundColor: Colors.white,

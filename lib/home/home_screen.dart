@@ -89,7 +89,16 @@ class _HomeState extends State<Home> {
           physics: const BouncingScrollPhysics(),
           children: [
             _buildHomePage(primary, surface, displayName, context),
-            TransactionScreen(onTransactionAdded: _loadSummary),
+            TransactionScreen(
+              onTransactionAdded: _loadSummary,
+              selectedType: '',
+              selectedCategories: {},
+              selectedTitle: '',
+              selectedAmountFrom: 0.00,
+              selectedAmountTo: 100000000000000.00,
+              selectedDateFrom: DateTime(2025, 1, 1),
+              selectedDateTo: DateTime(2027, 1, 1),
+            ),
             ManagementScreen(onTransactionAdded: _loadSummary),
             const ProfileScreen(),
           ],
@@ -312,6 +321,16 @@ class _HomeTransactionList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Displaytransaction().displayTransaction(period, 'all', (int i) {});
+    return Displaytransaction().displayTransaction(
+      period: period,
+      type: '',
+      categories: {},
+      title: '',
+      amountFrom: 0.00,
+      amountTo: 100000000000000.00,
+      dateFrom: DateTime(2025, 1, 1),
+      dateTo: DateTime(2027, 1, 1),
+      ontap: (int i) {},
+    );
   }
 }
