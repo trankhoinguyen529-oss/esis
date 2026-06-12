@@ -155,13 +155,15 @@ class DatabaseService {
     DateTime dateTo,
   ) async {
     final all = await getAllTransactions();
-    bool isExpense = (type == '1') ? true : false;
+    bool isExpense = (type == 'Expense') ? true : false;
     return all.where((item) {
       return ((item.title == title || title == '') &&
           (item.amount <= amountTo && item.amount >= amountFrom) &&
-          (item.isExpense == isExpense || type == '') &&
+          (item.isExpense == isExpense || type == 'All') &&
           (!(item.date).isBefore(dateFrom) && !(item.date).isAfter(dateTo)) &&
-          (categories.contains(item.category) || categories.isEmpty));
+          (categories.contains(item.category) ||
+              categories.isEmpty ||
+              categories.contains('All')));
     }).toList();
   }
 
@@ -170,6 +172,38 @@ class DatabaseService {
     final items = period == -1
         ? await getAllTransactions()
         : await getTransactionsByPeriod(period);
+    double income = 0;
+    double expense = 0;
+    for (final item in items) {
+      if (item.isExpense) {
+        expense += item.amount;
+      } else {
+        income += item.amount;
+      }
+    }
+    return {'income': income, 'expense': expense};
+  }
+
+  //Tính income và expense theo bộ lọc
+  Future<Map<String, double>> getSummaryByFilter(
+    String type,
+    Set<String> categories,
+    String title,
+    double amountFrom,
+    double amountTo,
+    DateTime dateFrom,
+    DateTime dateTo,
+  ) async {
+    final items = await getTransactionsByFilter(
+      type,
+      categories,
+      title,
+      amountFrom,
+      amountTo,
+      dateFrom,
+      dateTo,
+    );
+
     double income = 0;
     double expense = 0;
     for (final item in items) {

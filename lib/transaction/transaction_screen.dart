@@ -8,10 +8,10 @@ class TransactionScreen extends StatefulWidget {
   DateTime selectedDateFrom = DateTime(2025, 1, 1);
   DateTime selectedDateTo = DateTime(2027, 1, 1);
   Set<String> selectedCategories = {};
-  String selectedTitle = '';
-  String selectedType = '';
+  String selectedTitle = 'All';
+  String selectedType = 'All';
   double selectedAmountFrom = 0.00;
-  double selectedAmountTo = 100000000000.00;
+  double selectedAmountTo = 1000000000000.00;
   TransactionScreen({
     super.key,
     this.onTransactionAdded,
@@ -44,7 +44,15 @@ class _TransactionScreenState extends State<TransactionScreen> {
   Future<void> _openFilter() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => TransactionFilterScreen(),
+        builder: (_) => TransactionFilterScreen(
+          selectedAmountFrom: widget.selectedAmountFrom,
+          selectedAmountTo: widget.selectedAmountTo,
+          selectedCategories: widget.selectedCategories,
+          selectedDateFrom: widget.selectedDateFrom,
+          selectedDateTo: widget.selectedDateTo,
+          selectedTitle: widget.selectedTitle,
+          selectedType: widget.selectedType,
+        ),
       ),
     );
 
@@ -58,12 +66,21 @@ class _TransactionScreenState extends State<TransactionScreen> {
         widget.selectedDateFrom = result['dateFrom'];
         widget.selectedDateTo = result['dateTo'];
       });
+      _loadSummary();
     }
   }
 
   Future<void> _loadSummary() async {
     setState(() => _summaryLoading = true);
-    final summary = await DatabaseService().getSummaryByPeriod(_selectedPeriod);
+    final summary = await DatabaseService().getSummaryByFilter(
+      widget.selectedType,
+      widget.selectedCategories,
+      widget.selectedTitle,
+      widget.selectedAmountFrom,
+      widget.selectedAmountTo,
+      widget.selectedDateFrom,
+      widget.selectedDateTo,
+    );
     if (mounted) {
       setState(() {
         _income = summary['income'] ?? 0;

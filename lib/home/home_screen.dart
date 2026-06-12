@@ -91,8 +91,8 @@ class _HomeState extends State<Home> {
             _buildHomePage(primary, surface, displayName, context),
             TransactionScreen(
               onTransactionAdded: _loadSummary,
-              selectedType: '',
-              selectedCategories: {},
+              selectedType: 'All',
+              selectedCategories: {'All'},
               selectedTitle: '',
               selectedAmountFrom: 0.00,
               selectedAmountTo: 100000000000000.00,

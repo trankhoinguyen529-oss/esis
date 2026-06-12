@@ -1,6 +1,4 @@
 import 'package:a_management/data/data_transaction.dart';
-import 'package:a_management/transaction/transaction_screen.dart';
-import 'package:a_management/widget/appsnackbar.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -8,8 +6,22 @@ import '../widget/icon_map.dart';
 import '../services/database_service.dart';
 
 class TransactionFilterScreen extends StatefulWidget {
-  const TransactionFilterScreen({
+  DateTime selectedDateFrom = DateTime(2020, 1, 1);
+  DateTime selectedDateTo = DateTime(2030, 1, 1);
+  Set<String> selectedCategories = {'All'};
+  String selectedTitle = '';
+  String selectedType = 'All';
+  double selectedAmountFrom = 0.00;
+  double selectedAmountTo = 1000000000000.00;
+  TransactionFilterScreen({
     super.key,
+    required this.selectedDateFrom,
+    required this.selectedDateTo,
+    required this.selectedTitle,
+    required this.selectedCategories,
+    required this.selectedType,
+    required this.selectedAmountFrom,
+    required this.selectedAmountTo,
   });
 
   @override
@@ -26,27 +38,25 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
   final _pickdateFrom = Pickdate();
   final _pickdateTo = Pickdate();
 
-  DateTime selectedDateFrom = DateTime(2020, 1, 1);
-  DateTime selectedDateTo = DateTime(2030, 1, 1);
-  bool _isExpense = true;
   bool _isSaving = false;
-  Set<String> selectedCategories = {};
-  String selectedTitle = '';
-  String selectedType = '';
-  double selectedAmountFrom = 0.00;
-  double selectedAmountTo = 1000000000000.00;
   late DatabaseService db;
   TransactionItem? item;
-
-  double _income = 0;
-  double _expense = 0;
-  bool _summaryLoading = true;
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
 
   @override
-  void initState() {}
+  void initState() {
+    super.initState();
+    // ✅ set sẵn giá trị vào controller
+    _titleCtrl.text = widget.selectedTitle;
+    _amountFromCtrl.text = widget.selectedAmountFrom == 0.00
+        ? ''
+        : widget.selectedAmountFrom.toStringAsFixed(2);
+    _amountToCtrl.text = widget.selectedAmountTo >= 1000000000000.00
+        ? ''
+        : widget.selectedAmountTo.toStringAsFixed(2);
+  }
 
   @override
   void dispose() {
@@ -56,25 +66,13 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
     super.dispose();
   }
 
-  Future<void> _loadSummary() async {
-    setState(() => _summaryLoading = true);
-    final summary = await DatabaseService().getSummaryByPeriod(-1);
-    if (mounted) {
-      setState(() {
-        _income = summary['income'] ?? 0;
-        _expense = summary['expense'] ?? 0;
-        _summaryLoading = false;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     // Thêm dateStr riêng
     final dateStrFrom =
-        '${selectedDateFrom.day.toString().padLeft(2, '0')}/${selectedDateFrom.month.toString().padLeft(2, '0')}/${selectedDateFrom.year}';
+        '${widget.selectedDateFrom.day.toString().padLeft(2, '0')}/${widget.selectedDateFrom.month.toString().padLeft(2, '0')}/${widget.selectedDateFrom.year}';
     final dateStrTo =
-        '${selectedDateTo.day.toString().padLeft(2, '0')}/${selectedDateTo.month.toString().padLeft(2, '0')}/${selectedDateTo.year}';
+        '${widget.selectedDateTo.day.toString().padLeft(2, '0')}/${widget.selectedDateTo.month.toString().padLeft(2, '0')}/${widget.selectedDateTo.year}';
 
     return Scaffold(
       backgroundColor: primary,
@@ -126,9 +124,9 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       context: context,
                       icons: TypeItem.icons,
                       ifSelected: (selected) {
-                        setState(() => selectedType = selected);
+                        setState(() => widget.selectedType = selected);
                       },
-                      selectedKey: selectedType,
+                      selectedKey: widget.selectedType,
                     ),
                     const SizedBox(height: 8),
                     // Category field
@@ -136,11 +134,11 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     const SizedBox(height: 8),
                     _textfield.buildFormField_M(
                       context: context,
-                      icons: CategoryItem.icons,
+                      icons: CategoryItem.icons2,
                       ifSelected: (selected) {
-                        setState(() => selectedCategories = selected);
+                        setState(() => widget.selectedCategories = selected);
                       },
-                      selectedKeys: selectedCategories,
+                      selectedKeys: widget.selectedCategories,
                     ),
                     const SizedBox(height: 8),
                     // Title field
@@ -148,7 +146,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     const SizedBox(height: 8),
                     _textfield.buildTextField(
                       controller: _titleCtrl,
-                      hint: selectedTitle,
+                      hint: '',
                       icon: Icons.edit_note,
                       validator: (v) => (v == null || v.trim().isEmpty)
                           ? 'Please Enter Title'
@@ -211,9 +209,9 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     GestureDetector(
                       onTap: () => _pickdateFrom.PickDate(
                         context: context,
-                        selectedDate: selectedDateFrom,
+                        selectedDate: widget.selectedDateFrom,
                         ifPicked: (picked) {
-                          setState(() => selectedDateFrom = picked);
+                          setState(() => widget.selectedDateFrom = picked);
                         },
                       ),
                       child: Container(
@@ -250,9 +248,9 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     GestureDetector(
                       onTap: () => _pickdateTo.PickDate(
                         context: context,
-                        selectedDate: selectedDateTo,
+                        selectedDate: widget.selectedDateTo,
                         ifPicked: (picked) {
-                          setState(() => selectedDateTo = picked);
+                          setState(() => widget.selectedDateTo = picked);
                         },
                       ),
                       child: Container(
@@ -289,8 +287,8 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       child: ElevatedButton(
                         onPressed: () {
                           Navigator.of(context).pop({
-                            'type': selectedType,
-                            'categories': selectedCategories,
+                            'type': widget.selectedType,
+                            'categories': widget.selectedCategories,
                             'title': _titleCtrl.text.trim(), // ✅
                             'amountFrom':
                                 double.tryParse(_amountFromCtrl.text.trim()) ??
@@ -298,8 +296,8 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                             'amountTo':
                                 double.tryParse(_amountToCtrl.text.trim()) ??
                                     100000000000.00, // ✅
-                            'dateFrom': selectedDateFrom,
-                            'dateTo': selectedDateTo,
+                            'dateFrom': widget.selectedDateFrom,
+                            'dateTo': widget.selectedDateTo,
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -321,6 +319,52 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                               )
                             : const Text(
                                 'Apply',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                      ),
+                    ),
+                    //Reset filter button
+                    const SizedBox(height: 32),
+                    SizedBox(
+                      height: 60,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          setState(() {
+                            widget.selectedDateFrom = DateTime(2020, 1, 1);
+                            widget.selectedDateTo = DateTime(2030, 1, 1);
+                            widget.selectedAmountFrom = 0.00;
+                            widget.selectedAmountTo = 1000000000000.00;
+                            widget.selectedCategories = {'All'};
+                            widget.selectedTitle = '';
+                            widget.selectedType = 'All';
+                          });
+                          // ✅ reset controller riêng
+                          _titleCtrl.clear();
+                          _amountFromCtrl.clear();
+                          _amountToCtrl.clear();
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.red,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: _isSaving
+                            ? const SizedBox(
+                                height: 24,
+                                width: 24,
+                                child: CircularProgressIndicator(
+                                  color: Colors.white,
+                                  strokeWidth: 2.5,
+                                ),
+                              )
+                            : const Text(
+                                'Reset Filter',
                                 style: TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.w800,
