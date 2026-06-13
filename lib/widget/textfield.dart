@@ -154,10 +154,21 @@ class Textfield {
                           : null,
                       onTap: () {
                         setSheetState(() {
-                          if (isSelected) {
-                            tempSelected.remove(entry.key);
+                          if (entry.key == 'All') {
+                            // ✅ bấm All → chỉ chọn All, bỏ hết cái khác
+                            tempSelected = {'All'};
                           } else {
-                            tempSelected.add(entry.key);
+                            // ✅ bấm item khác → bỏ All, toggle item đó
+                            tempSelected.remove('All');
+                            if (isSelected) {
+                              tempSelected.remove(entry.key);
+                            } else {
+                              tempSelected.add(entry.key);
+                            }
+                            // ✅ nếu bỏ hết thì tự động về All
+                            if (tempSelected.isEmpty) {
+                              tempSelected = {'All'};
+                            }
                           }
                         });
                       },

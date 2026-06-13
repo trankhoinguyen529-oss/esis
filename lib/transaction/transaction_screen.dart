@@ -5,8 +5,8 @@ import 'package:a_management/services/database_service.dart';
 
 class TransactionScreen extends StatefulWidget {
   final VoidCallback? onTransactionAdded;
-  DateTime selectedDateFrom = DateTime(2025, 1, 1);
-  DateTime selectedDateTo = DateTime(2027, 1, 1);
+  DateTime selectedDateFrom = DateTime(2020, 1, 1);
+  DateTime selectedDateTo = DateTime(2030, 1, 1);
   Set<String> selectedCategories = {};
   String selectedTitle = 'All';
   String selectedType = 'All';
