@@ -28,9 +28,11 @@ class DatabaseService {
     final path = join(dbPath, 'transactions.db');
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: (db, version) async {
         await _createTable(db);
+        await _createSyncedEmailsTable(db);
+        await _createAppSettingsTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -38,6 +40,10 @@ class DatabaseService {
           await db.execute(
             "ALTER TABLE transactions ADD COLUMN user_id TEXT NOT NULL DEFAULT ''",
           );
+        }
+        if (oldVersion < 3) {
+          await _createSyncedEmailsTable(db);
+          await _createAppSettingsTable(db);
         }
       },
     );
@@ -55,6 +61,25 @@ class DatabaseService {
         is_expense INTEGER NOT NULL DEFAULT 1,
         date TEXT NOT NULL,
         time TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createSyncedEmailsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS synced_emails (
+        message_id TEXT PRIMARY KEY,
+        user_id TEXT NOT NULL,
+        synced_at TEXT NOT NULL
+      )
+    ''');
+  }
+
+  Future<void> _createAppSettingsTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS app_settings (
+        key TEXT PRIMARY KEY,
+        value TEXT NOT NULL
       )
     ''');
   }
@@ -286,5 +311,66 @@ class DatabaseService {
 
     // ignore: avoid_print
     print('══════════════════════════════════════════════\n');
+  }
+
+  // ─── Synced Emails Helper ──────────────────────────────────
+
+  Future<bool> isEmailSynced(String messageId) async {
+    final db = await database;
+    final maps = await db.query(
+      'synced_emails',
+      where: 'message_id = ? AND user_id = ?',
+      whereArgs: [messageId, _currentUserId],
+      limit: 1,
+    );
+    return maps.isNotEmpty;
+  }
+
+  Future<void> markEmailSynced(String messageId) async {
+    final db = await database;
+    await db.insert(
+      'synced_emails',
+      {
+        'message_id': messageId,
+        'user_id': _currentUserId,
+        'synced_at': DateTime.now().toIso8601String(),
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  // ─── Settings Helper ────────────────────────────────────────
+
+  Future<String?> getSetting(String key) async {
+    final db = await database;
+    final maps = await db.query(
+      'app_settings',
+      where: 'key = ?',
+      whereArgs: [key],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return maps.first['value'] as String?;
+  }
+
+  Future<void> saveSetting(String key, String value) async {
+    final db = await database;
+    await db.insert(
+      'app_settings',
+      {
+        'key': key,
+        'value': value,
+      },
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<void> deleteSetting(String key) async {
+    final db = await database;
+    await db.delete(
+      'app_settings',
+      where: 'key = ?',
+      whereArgs: [key],
+    );
   }
 }

@@ -2,6 +2,7 @@ import 'package:a_management/profile/edit_profile.dart';
 import 'package:a_management/services/auth_service.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
+import 'bank_email_sync_screen.dart';
 
 import '../login/login_screen.dart';
 
@@ -91,6 +92,18 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (context) => EditProfileScreen(),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildMenuTile(
+                    Icons.sync,
+                    'Email Ngân Hàng',
+                    onTap: () {
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (context) => const BankEmailSyncScreen(),
                         ),
                       );
                     },
