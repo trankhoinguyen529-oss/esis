@@ -80,7 +80,17 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
         backgroundColor: primary,
         elevation: 0,
         leading: GestureDetector(
-          onTap: () => Navigator.of(context).pop(),
+          onTap: () => Navigator.of(context).pop({
+            'type': widget.selectedType,
+            'categories': widget.selectedCategories,
+            'title': _titleCtrl.text.trim(), // ✅
+            'amountFrom':
+                double.tryParse(_amountFromCtrl.text.trim()) ?? 0.00, // ✅
+            'amountTo': double.tryParse(_amountToCtrl.text.trim()) ??
+                1000000000000.00, // ✅
+            'dateFrom': widget.selectedDateFrom,
+            'dateTo': widget.selectedDateTo,
+          }),
           child: Container(
             margin: const EdgeInsets.all(8),
             decoration: const BoxDecoration(
@@ -295,7 +305,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                                     0.00, // ✅
                             'amountTo':
                                 double.tryParse(_amountToCtrl.text.trim()) ??
-                                    100000000000.00, // ✅
+                                    1000000000000.00, // ✅
                             'dateFrom': widget.selectedDateFrom,
                             'dateTo': widget.selectedDateTo,
                           });

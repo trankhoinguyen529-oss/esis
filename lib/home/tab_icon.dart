@@ -18,25 +18,15 @@ class TabIcon extends StatelessWidget {
     this.onProfile,
   });
 
+  static const primary = Color(0xFF00C18A);
+
   @override
   Widget build(BuildContext context) {
-    const primary = Color(0xFF00C18A);
-
-    Widget buildIcon(int index, IconData icon, VoidCallback? onPressed) {
+    Widget buildIcon(
+        int index, IconData icon, VoidCallback? onPressed, String title) {
       final selected = selectedIndex == index;
       if (selected) {
-        return GestureDetector(
-          onTap: onPressed,
-          child: Container(
-            width: 52,
-            height: 52,
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(icon, color: primary, size: 32),
-          ),
-        );
+        return tabTooltip(title, icon, onPressed);
       }
 
       return IconButton(
@@ -56,12 +46,39 @@ class TabIcon extends StatelessWidget {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
           children: [
-            buildIcon(0, Icons.home, onHome),
+            buildIcon(0, Icons.home, onHome, 'Home'),
             //buildIcon(1, Icons.bar_chart, onAnalytics),
-            buildIcon(2, Icons.compare_arrows, onTransaction),
-            buildIcon(3, Icons.layers, onManagement),
-            buildIcon(4, Icons.person, onProfile),
+            buildIcon(2, Icons.compare_arrows, onTransaction, 'Transactions'),
+            buildIcon(3, Icons.layers, onManagement, 'Management'),
+            buildIcon(4, Icons.person, onProfile, 'Profile'),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget tabTooltip(String title, IconData icon, VoidCallback? onPressed) {
+    return Tooltip(
+      message: title, // nội dung hiện ra
+      preferBelow: false, // hiện phía trên
+      decoration: BoxDecoration(
+        color: Colors.white, // màu nền tooltip
+        borderRadius: BorderRadius.circular(8),
+      ),
+      textStyle: const TextStyle(
+        color: Colors.black,
+        fontSize: 20,
+      ),
+      child: GestureDetector(
+        onTap: onPressed,
+        child: Container(
+          width: 52,
+          height: 52,
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, color: primary, size: 32),
         ),
       ),
     );

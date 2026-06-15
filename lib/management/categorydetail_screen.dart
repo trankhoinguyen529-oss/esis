@@ -130,13 +130,13 @@ class _CategorydetailState extends State<Categorydetail> {
                       Expanded(
                           child: displaytransaction.displayTransaction(
                         period: -1,
-                        type: '',
+                        type: 'All',
                         categories: {widget.category},
                         title: '',
                         amountFrom: 0.00,
                         amountTo: 100000000000000.00,
-                        dateFrom: DateTime(2025, 1, 1),
-                        dateTo: DateTime(2027, 1, 1),
+                        dateFrom: DateTime(2020, 1, 1),
+                        dateTo: DateTime(2030, 1, 1),
                         ontap: (int transactionId) async {
                           final result = await Navigator.of(context).push(
                             MaterialPageRoute(

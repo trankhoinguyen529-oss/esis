@@ -11,7 +11,7 @@ class TransactionScreen extends StatefulWidget {
   String selectedTitle = 'All';
   String selectedType = 'All';
   double selectedAmountFrom = 0.00;
-  double selectedAmountTo = 1000000000000.00;
+  double selectedAmountTo = 0.00;
   TransactionScreen({
     super.key,
     this.onTransactionAdded,
