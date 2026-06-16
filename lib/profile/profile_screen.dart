@@ -64,75 +64,78 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
               ),
               padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-              child: Column(
-                children: [
-                  const SizedBox(height: 20),
-                  const CircleAvatar(
-                    radius: 64,
-                    backgroundColor: Colors.white,
-                    child: Icon(
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    const SizedBox(height: 20),
+                    const CircleAvatar(
+                      radius: 64,
+                      backgroundColor: Colors.white,
+                      child: Icon(
+                        Icons.person,
+                        size: 64,
+                        color: Color(0xFF00C18A),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const Text(
+                      'John Smith',
+                      style: TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 30),
+                    _buildMenuTile(
                       Icons.person,
-                      size: 64,
-                      color: Color(0xFF00C18A),
+                      'Edit Profile',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => EditProfileScreen(),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  const Text(
-                    'John Smith',
-                    style: TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.w800,
+                    const SizedBox(height: 12),
+                    _buildMenuTile(
+                      Icons.sync,
+                      'Bank Email',
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => const BankEmailSyncScreen(),
+                          ),
+                        );
+                      },
                     ),
-                  ),
-                  const SizedBox(height: 30),
-                  _buildMenuTile(
-                    Icons.person,
-                    'Edit Profile',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => EditProfileScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildMenuTile(
-                    Icons.sync,
-                    'Bank Email',
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => const BankEmailSyncScreen(),
-                        ),
-                      );
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildMenuTile(Icons.shield, 'Security'),
-                  const SizedBox(height: 12),
-                  _buildMenuTile(Icons.settings, 'Setting'),
-                  const SizedBox(height: 12),
-                  _buildMenuTile(Icons.help_outline, 'Help'),
-                  const SizedBox(height: 12),
-                  _buildMenuTile(
-                    Icons.logout,
-                    'Logout',
-                    onTap: () => ShowDialog().showLogoutDialog(
-                        context,
-                        'Log out',
-                        'Are you sure to log out',
-                        () {},
-                        () {}, () async {
-                      await _authService.signOut();
-                      if (!mounted) return;
-                      Navigator.of(context).pushAndRemoveUntil(
-                        MaterialPageRoute(builder: (_) => const LoginScreen()),
-                        (route) => false,
-                      );
-                    }),
-                  ),
-                ],
+                    const SizedBox(height: 12),
+                    _buildMenuTile(Icons.shield, 'Security'),
+                    const SizedBox(height: 12),
+                    _buildMenuTile(Icons.settings, 'Setting'),
+                    const SizedBox(height: 12),
+                    _buildMenuTile(Icons.help_outline, 'Help'),
+                    const SizedBox(height: 12),
+                    _buildMenuTile(
+                      Icons.logout,
+                      'Logout',
+                      onTap: () => ShowDialog().showLogoutDialog(
+                          context,
+                          'Log out',
+                          'Are you sure to log out',
+                          () {},
+                          () {}, () async {
+                        await _authService.signOut();
+                        if (!mounted) return;
+                        Navigator.of(context).pushAndRemoveUntil(
+                          MaterialPageRoute(builder: (_) => const LoginScreen()),
+                          (route) => false,
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 24),
+                  ],
+                ),
               ),
             ),
           ),
