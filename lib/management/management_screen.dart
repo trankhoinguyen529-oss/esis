@@ -56,25 +56,28 @@ class ManagementScreen extends StatelessWidget {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(36)),
               ),
               padding: const EdgeInsets.fromLTRB(18, 24, 18, 0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Choose Category',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black87,
+              child: SingleChildScrollView(
+                // ✅
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Choose Category',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black87,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 6),
-                  const Text(
-                    'Tap to view and add transactions',
-                    style: TextStyle(fontSize: 13, color: Colors.black45),
-                  ),
-                  const SizedBox(height: 18),
-                  Expanded(
-                    child: GridView.builder(
+                    const SizedBox(height: 6),
+                    const Text(
+                      'Tap to view and add transactions',
+                      style: TextStyle(fontSize: 13, color: Colors.black45),
+                    ),
+                    const SizedBox(height: 18),
+                    GridView.builder(
+                      shrinkWrap: true,
+                      physics: const NeverScrollableScrollPhysics(),
                       gridDelegate:
                           const SliverGridDelegateWithFixedCrossAxisCount(
                         crossAxisCount: 3,
@@ -85,28 +88,54 @@ class ManagementScreen extends StatelessWidget {
                       itemCount: entries.length,
                       itemBuilder: (context, index) {
                         final cat = entries[index];
-                        CategoryTile categoryTile = CategoryTile();
-                        return categoryTile.build(
+                        return CategoryTile().build(
                           context,
                           cat.value,
                           cat.key,
                           () async {
                             final result = await Navigator.of(context).push(
                               MaterialPageRoute(
-                                builder: (_) => Categorydetail(
-                                  category: cat.key,
-                                ),
+                                builder: (_) =>
+                                    Categorydetail(category: cat.key),
                               ),
                             );
-                            if (result == true) {
-                              onTransactionAdded?.call();
-                            }
+                            if (result == true) onTransactionAdded?.call();
                           },
                         );
                       },
                     ),
-                  ),
-                ],
+                    const SizedBox(height: 18),
+                    const Text(
+                      'More',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.black87,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    SizedBox(
+                      width: (MediaQuery.of(context).size.width -
+                              18 * 2 -
+                              12 * 2) /
+                          3, // ✅ cùng size với GridView tile
+                      height: (MediaQuery.of(context).size.width -
+                              18 * 2 -
+                              12 * 2) /
+                          3,
+                      child: GestureDetector(
+                        onTap: () {},
+                        child: CategoryTile().build(
+                          context,
+                          Icons.account_balance_rounded,
+                          'Bank',
+                          () {},
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                  ],
+                ),
               ),
             ),
           ),
