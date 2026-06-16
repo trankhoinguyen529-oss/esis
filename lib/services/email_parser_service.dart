@@ -207,7 +207,7 @@ class EmailParserService {
     }
 
     // 5. Category mapping based on keywords
-    String category = _mapCategory(description, isExpense);
+    //String category = _mapCategory(description, isExpense);
 
     return ParsedEmailTransaction(
       title: '$bankName Transaction',
@@ -215,8 +215,8 @@ class EmailParserService {
       isExpense: isExpense,
       date: date,
       time: time,
-      category: category,
-      description: description,
+      category: 'Others',
+      description: '',
     );
   }
 
@@ -242,133 +242,4 @@ class EmailParserService {
 
   /// Map description to app category keys:
   /// 'Food', 'Transport', 'Medicine', 'Groceries', 'Rent', 'Gifts', 'Savings', 'Entertainment', 'Salary', 'Work', 'Gaming', 'Others'
-  static String _mapCategory(String description, bool isExpense) {
-    final desc = description.toLowerCase();
-
-    if (!isExpense) {
-      if (desc.contains('luong') ||
-          desc.contains('salary') ||
-          desc.contains('paycheck') ||
-          desc.contains('thu nhap') ||
-          desc.contains('bonus') ||
-          desc.contains('thuong')) {
-        return 'Salary';
-      }
-      if (desc.contains('work') ||
-          desc.contains('freelance') ||
-          desc.contains('ban hang')) {
-        return 'Work';
-      }
-      return 'Savings';
-    }
-
-    if (desc.contains('an sang') ||
-        desc.contains('an trua') ||
-        desc.contains('an toi') ||
-        desc.contains('cafe') ||
-        desc.contains('coffee') ||
-        desc.contains('food') ||
-        desc.contains('restaurant') ||
-        desc.contains('nha hang') ||
-        desc.contains('tra sua') ||
-        desc.contains('starbucks') ||
-        desc.contains('highlands') ||
-        desc.contains('shopeefood') ||
-        desc.contains('grabfood')) {
-      return 'Food';
-    }
-
-    if (desc.contains('grab') ||
-        desc.contains('gojek') ||
-        desc.contains('be ') ||
-        desc.contains('taxi') ||
-        desc.contains('xe may') ||
-        desc.contains('xang') ||
-        desc.contains('ve xe') ||
-        desc.contains('ve may bay') ||
-        desc.contains('flight') ||
-        desc.contains('transport') ||
-        desc.contains('bus')) {
-      return 'Transport';
-    }
-
-    if (desc.contains('nha thuoc') ||
-        desc.contains('thuoc') ||
-        desc.contains('pharmacy') ||
-        desc.contains('hospital') ||
-        desc.contains('benh vien') ||
-        desc.contains('kham benh') ||
-        desc.contains('bac si') ||
-        desc.contains('medical') ||
-        desc.contains('medicine')) {
-      return 'Medicine';
-    }
-
-    if (desc.contains('shopee') ||
-        desc.contains('lazada') ||
-        desc.contains('tiki') ||
-        desc.contains('sieu thi') ||
-        desc.contains('market') ||
-        desc.contains('mart') ||
-        desc.contains('vinmart') ||
-        desc.contains('coop') ||
-        desc.contains('bach hoa') ||
-        desc.contains('groceries')) {
-      return 'Groceries';
-    }
-
-    if (desc.contains('nha') ||
-        desc.contains('rent') ||
-        desc.contains('phong') ||
-        desc.contains('tro') ||
-        desc.contains('chung cu') ||
-        desc.contains('house')) {
-      return 'Rent';
-    }
-
-    if (desc.contains('tang') ||
-        desc.contains('gift') ||
-        desc.contains('sinh nhat') ||
-        desc.contains('birthday') ||
-        desc.contains('mung') ||
-        desc.contains('donate') ||
-        desc.contains('tu thien')) {
-      return 'Gifts';
-    }
-
-    if (desc.contains('tiet kiem') ||
-        desc.contains('dau tu') ||
-        desc.contains('gui tiet kiem') ||
-        desc.contains('savings')) {
-      return 'Savings';
-    }
-
-    if (desc.contains('phim') ||
-        desc.contains('movie') ||
-        desc.contains('netflix') ||
-        desc.contains('rap chieu') ||
-        desc.contains('ca nhac') ||
-        desc.contains('concert') ||
-        desc.contains('ticket') ||
-        desc.contains('entertainment')) {
-      return 'Entertainment';
-    }
-
-    if (desc.contains('game') ||
-        desc.contains('ps5') ||
-        desc.contains('steam') ||
-        desc.contains('nintendo') ||
-        desc.contains('gaming')) {
-      return 'Gaming';
-    }
-
-    if (desc.contains('cong viec') ||
-        desc.contains('work') ||
-        desc.contains('van phong pham') ||
-        desc.contains('in an')) {
-      return 'Work';
-    }
-
-    return 'Others';
-  }
 }
