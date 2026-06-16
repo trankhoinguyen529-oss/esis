@@ -6,6 +6,8 @@ import '../management/management_screen.dart';
 import 'tab_icon.dart';
 import '../transaction/transaction_screen.dart';
 import '../services/database_service.dart';
+import '../services/bank_email_sync_service.dart';
+import '../profile/bank_email_sync_screen.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -28,12 +30,33 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
     _loadSummary();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoSyncEmails();
+    });
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _autoSyncEmails() async {
+    try {
+      final newTxns = await BankEmailSyncService().syncEmails();
+      if (newTxns > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Automatic synchronization: Added new $newTxns transaction from email!'),
+            backgroundColor: const Color(0xFF00C18A),
+          ),
+        );
+        _loadSummary();
+      }
+    } catch (e) {
+      debugPrint('Auto sync failed silently: $e');
+    }
   }
 
   Future<void> _loadSummary() async {
@@ -45,6 +68,67 @@ class _HomeState extends State<Home> {
         _expense = summary['expense'] ?? 0;
         _summaryLoading = false;
       });
+    }
+  }
+
+  Future<void> _syncBankEmails() async {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => const Center(
+        child: CircularProgressIndicator(color: Color(0xFF00C18A)),
+      ),
+    );
+
+    try {
+      final newTxns = await BankEmailSyncService().syncEmails();
+      if (mounted) {
+        Navigator.pop(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+                'Automatic synchronization: Added new $newTxns transaction from email!'),
+            backgroundColor: const Color(0xFF00C18A),
+          ),
+        );
+        _loadSummary();
+      }
+    } catch (e) {
+      if (mounted) {
+        Navigator.pop(context);
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('No email account configured',
+                style: TextStyle(fontWeight: FontWeight.bold)),
+            content: const Text(
+              'You need to set up your email login information before the system can connect to synchronize.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Cancel',
+                    style: TextStyle(color: Colors.black54)),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const BankEmailSyncScreen()),
+                  ).then((_) => _loadSummary());
+                },
+                child: const Text('Setup now',
+                    style: TextStyle(
+                        color: Color(0xFF00C18A), fontWeight: FontWeight.bold)),
+              ),
+            ],
+          ),
+        );
+      }
     }
   }
 
@@ -141,6 +225,19 @@ class _HomeState extends State<Home> {
                   ],
                 ),
               ),
+              GestureDetector(
+                onTap: _syncBankEmails,
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: surface,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.sync, color: Colors.black87),
+                ),
+              ),
+              const SizedBox(width: 8),
               GestureDetector(
                 onTap: () {},
                 child: Container(
