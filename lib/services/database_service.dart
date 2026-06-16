@@ -28,7 +28,7 @@ class DatabaseService {
     final path = join(dbPath, 'transactions.db');
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: (db, version) async {
         await _createTable(db);
         await _createSyncedEmailsTable(db);
@@ -36,7 +36,6 @@ class DatabaseService {
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
-          // Thêm cột user_id vào bảng cũ (dữ liệu cũ gán uid rỗng)
           await db.execute(
             "ALTER TABLE transactions ADD COLUMN user_id TEXT NOT NULL DEFAULT ''",
           );
@@ -44,6 +43,10 @@ class DatabaseService {
         if (oldVersion < 3) {
           await _createSyncedEmailsTable(db);
           await _createAppSettingsTable(db);
+          // ✅ thêm cột is_bank cho DB cũ chưa có
+          await db.execute(
+            "ALTER TABLE transactions ADD COLUMN is_bank INTEGER NOT NULL DEFAULT 0",
+          );
         }
       },
     );
@@ -59,6 +62,7 @@ class DatabaseService {
         icon_code INTEGER NOT NULL,
         amount REAL NOT NULL,
         is_expense INTEGER NOT NULL DEFAULT 1,
+        is_bank INTEGER NOT NULL DEFAULT 0,
         date TEXT NOT NULL,
         time TEXT NOT NULL
       )
@@ -305,7 +309,8 @@ class DatabaseService {
         ' | $typeIcon'
         ' | \$${(row['amount'] as num).toStringAsFixed(2)}'
         ' | ${(row['date'] as String).substring(0, 10)}'
-        ' ${row['time']}',
+        ' ${row['time']}'
+        ' | 🏦 ${(row['is_bank'] as int?) == 1 ? 'Bank' : 'Manual'}', // ✅ thêm vào đây
       );
     }
 

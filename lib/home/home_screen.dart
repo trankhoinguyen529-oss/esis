@@ -31,7 +31,7 @@ class _HomeState extends State<Home> {
   @override
   void initState() {
     super.initState();
-    _startAutoSync();
+    // _startAutoSync();
     _loadSummary();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoSyncEmails();
@@ -163,6 +163,7 @@ class _HomeState extends State<Home> {
     final Color surface = const Color(0xFFF3FFF8);
     final user = _authService.currentUser;
     final displayName = user?.displayName ?? user?.email ?? 'User';
+    debugPrint('');
 
     return Scaffold(
       backgroundColor: primary,

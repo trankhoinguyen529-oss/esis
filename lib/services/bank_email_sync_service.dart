@@ -140,6 +140,8 @@ class BankEmailSyncService {
     String password,
     bool isSecure,
   ) async {
+    debugPrint('Connecting: host=$host port=$port email=$email');
+    debugPrint('Password length: ${password.length}');
     final client = ImapClient(isLogEnabled: false);
     try {
       await client.connectToServer(host, port, isSecure: isSecure);
@@ -209,28 +211,6 @@ class BankEmailSyncService {
 
           // Mapping to IconData
           IconData categoryIcon = Icons.more_horiz;
-          if (parsed.category == 'Food')
-            categoryIcon = Icons.restaurant;
-          else if (parsed.category == 'Transport')
-            categoryIcon = Icons.directions_bus;
-          else if (parsed.category == 'Medicine')
-            categoryIcon = Icons.medical_services;
-          else if (parsed.category == 'Groceries')
-            categoryIcon = Icons.local_grocery_store;
-          else if (parsed.category == 'Rent')
-            categoryIcon = Icons.home;
-          else if (parsed.category == 'Gifts')
-            categoryIcon = Icons.card_giftcard;
-          else if (parsed.category == 'Savings')
-            categoryIcon = Icons.savings;
-          else if (parsed.category == 'Entertainment')
-            categoryIcon = Icons.movie;
-          else if (parsed.category == 'Salary')
-            categoryIcon = Icons.wallet;
-          else if (parsed.category == 'Work')
-            categoryIcon = Icons.work;
-          else if (parsed.category == 'Gaming')
-            categoryIcon = Icons.sports_esports;
 
           final transaction = TransactionItem(
             icon: categoryIcon,
@@ -240,6 +220,7 @@ class BankEmailSyncService {
             date: parsed.date,
             amount: parsed.amount,
             isExpense: parsed.isExpense,
+            isBank: true,
           );
 
           // Save transaction & mark email as synced
@@ -312,14 +293,14 @@ class BankEmailSyncService {
     else if (parsed.category == 'Gaming') categoryIcon = Icons.sports_esports;
 
     final transaction = TransactionItem(
-      icon: categoryIcon,
-      title: parsed.description,
-      category: parsed.category,
-      time: parsed.time,
-      date: parsed.date,
-      amount: parsed.amount,
-      isExpense: parsed.isExpense,
-    );
+        icon: categoryIcon,
+        title: parsed.description,
+        category: parsed.category,
+        time: parsed.time,
+        date: parsed.date,
+        amount: parsed.amount,
+        isExpense: parsed.isExpense,
+        isBank: true);
 
     // Save and record as synced
     await _dbService.insertTransaction(transaction);

@@ -6,6 +6,7 @@ class ParsedEmailTransaction {
   final String time;
   final String category;
   final String description;
+  final bool isBank;
 
   ParsedEmailTransaction({
     required this.title,
@@ -15,6 +16,7 @@ class ParsedEmailTransaction {
     required this.time,
     required this.category,
     required this.description,
+    required this.isBank,
   });
 }
 
@@ -216,7 +218,8 @@ class EmailParserService {
       date: date,
       time: time,
       category: 'Others',
-      description: '',
+      description: 'Quick transaction',
+      isBank: true,
     );
   }
 

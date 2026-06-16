@@ -74,8 +74,47 @@ class _TransactionItemWidget extends StatelessWidget {
   final VoidCallback ontap;
   const _TransactionItemWidget({required this.item, required this.ontap});
   @override
+  Widget stackContainer(IconData? icon) {
+    return Stack(
+      clipBehavior: Clip.none,
+      children: [
+        // Container lớn 56x56
+        Container(
+          width: 56,
+          height: 56,
+          decoration: BoxDecoration(
+            color: const Color(0xFFE8F8F3),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(icon,
+              size: 28, color: const Color(0xFF00C18A)), // ✅ icon nhỏ lại
+        ),
+        // Container nhỏ góc dưới phải
+        Positioned(
+          bottom: -8,
+          right: -8,
+          child: Container(
+            width: 27, // ✅ tăng lên chút để icon vừa
+            height: 27,
+            decoration: BoxDecoration(
+              color: Colors.blue,
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: Colors.white, width: 2),
+            ),
+            child: const Icon(
+              Icons.account_balance_rounded,
+              size: 15, // ✅ icon nhỏ vừa với container
+              color: Colors.white,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget build(BuildContext context) {
     final isExpense = item.isExpense;
+    final isBank = item.isBank;
     return GestureDetector(
       onTap: ontap,
       behavior: HitTestBehavior.opaque,
@@ -83,15 +122,18 @@ class _TransactionItemWidget extends StatelessWidget {
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
-            Container(
-              width: 56,
-              height: 56,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8F8F3),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Icon(item.icon, color: const Color(0xFF00C18A), size: 28),
-            ),
+            (isBank)
+                ? stackContainer(item.icon)
+                : Container(
+                    width: 56,
+                    height: 56,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFE8F8F3),
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: Icon(item.icon,
+                        color: const Color(0xFF00C18A), size: 28),
+                  ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(

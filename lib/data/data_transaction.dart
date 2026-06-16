@@ -9,6 +9,7 @@ class TransactionItem {
   final DateTime date;
   final double amount;
   final bool isExpense;
+  final bool isBank;
 
   const TransactionItem({
     this.id,
@@ -19,6 +20,7 @@ class TransactionItem {
     required this.date,
     required this.amount,
     this.isExpense = true,
+    this.isBank = false,
   });
 
   /// Chuyển từ Map (SQLite row) sang TransactionItem
@@ -32,6 +34,7 @@ class TransactionItem {
       date: DateTime.parse(map['date'] as String),
       amount: (map['amount'] as num).toDouble(),
       isExpense: (map['is_expense'] as int) == 1,
+      isBank: map['is_bank'] == 1,
     );
   }
 
@@ -46,6 +49,7 @@ class TransactionItem {
       'is_expense': isExpense ? 1 : 0,
       'date': date.toIso8601String(),
       'time': time,
+      'is_bank': isBank ? 1 : 0
     };
   }
 }
