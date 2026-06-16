@@ -13,7 +13,7 @@ class DatabaseService {
   // ─── Lấy UID của người dùng hiện tại ───────────────────────
   String get _currentUserId {
     final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid == null) throw StateError('Không có user đang đăng nhập.');
+    if (uid == null) throw StateError('No user is currently logged in.');
     return uid;
   }
 

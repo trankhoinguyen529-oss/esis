@@ -99,7 +99,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: 12),
                   _buildMenuTile(
                     Icons.sync,
-                    'Email Ngân Hàng',
+                    'Bank Email',
                     onTap: () {
                       Navigator.of(context).push(
                         MaterialPageRoute(

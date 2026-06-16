@@ -47,7 +47,8 @@ class _HomeState extends State<Home> {
       if (newTxns > 0 && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Tự động đồng bộ: Đã thêm $newTxns giao dịch mới từ email!'),
+            content: Text(
+                'Automatic synchronization: Added new $newTxns transaction from email!'),
             backgroundColor: const Color(0xFF00C18A),
           ),
         );
@@ -85,7 +86,8 @@ class _HomeState extends State<Home> {
         Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Đồng bộ thành công! Đã ghi nhận thêm $newTxns giao dịch.'),
+            content: Text(
+                'Automatic synchronization: Added new $newTxns transaction from email!'),
             backgroundColor: const Color(0xFF00C18A),
           ),
         );
@@ -97,25 +99,31 @@ class _HomeState extends State<Home> {
         showDialog(
           context: context,
           builder: (context) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Text('Chưa cấu hình Email', style: TextStyle(fontWeight: FontWeight.bold)),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const Text('No email account configured',
+                style: TextStyle(fontWeight: FontWeight.bold)),
             content: const Text(
-              'Bạn cần thiết lập thông tin đăng nhập email của mình trước để hệ thống có thể kết nối đồng bộ.',
+              'You need to set up your email login information before the system can connect to synchronize.',
             ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
-                child: const Text('Hủy', style: TextStyle(color: Colors.black54)),
+                child: const Text('Cancel',
+                    style: TextStyle(color: Colors.black54)),
               ),
               TextButton(
                 onPressed: () {
                   Navigator.pop(context);
                   Navigator.push(
                     context,
-                    MaterialPageRoute(builder: (context) => const BankEmailSyncScreen()),
+                    MaterialPageRoute(
+                        builder: (context) => const BankEmailSyncScreen()),
                   ).then((_) => _loadSummary());
                 },
-                child: const Text('Cài đặt ngay', style: TextStyle(color: Color(0xFF00C18A), fontWeight: FontWeight.bold)),
+                child: const Text('Setup now',
+                    style: TextStyle(
+                        color: Color(0xFF00C18A), fontWeight: FontWeight.bold)),
               ),
             ],
           ),

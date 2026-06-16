@@ -157,7 +157,7 @@ class BankEmailSyncService {
   Future<int> syncEmails() async {
     final accounts = await getAccounts();
     if (accounts.isEmpty) {
-      throw Exception('Vui lòng cấu hình ít nhất một tài khoản email.');
+      throw Exception('Please configure at least one email account.');
     }
 
     int newTransactionsCount = 0;
@@ -168,7 +168,8 @@ class BankEmailSyncService {
 
       final client = ImapClient(isLogEnabled: false);
       try {
-        await client.connectToServer(account.host, account.port, isSecure: account.isSecure);
+        await client.connectToServer(account.host, account.port,
+            isSecure: account.isSecure);
         await client.login(account.email, account.password);
         await client.selectInbox();
 
@@ -183,8 +184,9 @@ class BankEmailSyncService {
               ? message.from!.first.email
               : '';
           final subject = message.decodeSubject() ?? '';
-          final body =
-              message.decodeTextPlainPart() ?? message.decodeTextHtmlPart() ?? '';
+          final body = message.decodeTextPlainPart() ??
+              message.decodeTextHtmlPart() ??
+              '';
           String? messageId;
           if (message.headers != null) {
             for (final h in message.headers!) {
@@ -254,7 +256,8 @@ class BankEmailSyncService {
     }
 
     if (errors.length == accounts.length && accounts.isNotEmpty) {
-      throw Exception('Lỗi đồng bộ tất cả tài khoản:\n${errors.join('\n')}');
+      throw Exception(
+          'Email sync failed for all accounts:\n${errors.join('\n')}');
     }
 
     await _dbService.saveSetting(
@@ -265,7 +268,7 @@ class BankEmailSyncService {
   /// Simulate an email sync for testing purposes without needing actual IMAP details
   Future<TransactionItem?> simulateSync(String bank, String rawText) async {
     String from = 'notification@bank.com.vn';
-    String subject = 'Biến động số dư tài khoản';
+    String subject = 'Thong bao bien dong so du';
 
     if (bank == 'Vietcombank') {
       from = 'no-reply@vietcombank.com.vn';

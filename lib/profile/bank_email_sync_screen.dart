@@ -33,18 +33,19 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-        title: const Text('Xác nhận xóa',
+        title: const Text('Confirm deletion',
             style: TextStyle(fontWeight: FontWeight.bold)),
         content: Text(
-            'Bạn có chắc chắn muốn xóa tài khoản email "${account.email}" không?'),
+            'Are you sure you want to delete this email account "${account.email}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Hủy', style: TextStyle(color: Colors.black54)),
+            child:
+                const Text('Cancel', style: TextStyle(color: Colors.black54)),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Xóa',
+            child: const Text('Delete',
                 style:
                     TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
           ),
@@ -60,7 +61,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Đã xóa tài khoản email thành công!'),
+            content: Text('Delete email account successfully!'),
             backgroundColor: Color(0xFF00C18A),
           ),
         );
@@ -117,9 +118,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isEdit
-                          ? 'Chỉnh Sửa Tài Khoản Email'
-                          : 'Thêm Tài Khoản Email',
+                      isEdit ? 'Edit Email Account' : 'Add Email Account',
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.w800),
                     ),
@@ -130,10 +129,10 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                           flex: 3,
                           child: _buildTextField(
                             controller: hostController,
-                            label: 'Máy chủ IMAP',
+                            label: 'IMAP Server',
                             hint: 'imap.gmail.com',
                             validator: (v) =>
-                                v!.isEmpty ? 'Không được để trống' : null,
+                                v!.isEmpty ? 'Cannot be empty' : null,
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -141,10 +140,10 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                           flex: 1,
                           child: _buildTextField(
                             controller: portController,
-                            label: 'Cổng',
+                            label: 'Port',
                             hint: '993',
                             keyboardType: TextInputType.number,
-                            validator: (v) => v!.isEmpty ? 'Lỗi' : null,
+                            validator: (v) => v!.isEmpty ? 'Error' : null,
                           ),
                         ),
                       ],
@@ -152,21 +151,20 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: emailController,
-                      label: 'Địa chỉ Email',
+                      label: 'Email Address',
                       hint: 'example@gmail.com',
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) => v!.isEmpty || !v.contains('@')
-                          ? 'Địa chỉ email không hợp lệ'
+                          ? 'Invalid email address'
                           : null,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
                       controller: passwordController,
-                      label: 'Mật khẩu ứng dụng',
+                      label: 'App Password',
                       hint: '•••• •••• •••• ••••',
                       obscureText: true,
-                      validator: (v) =>
-                          v!.isEmpty ? 'Không được để trống' : null,
+                      validator: (v) => v!.isEmpty ? 'Cannot be empty' : null,
                     ),
                     const SizedBox(height: 12),
                     Container(
@@ -184,7 +182,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                           const SizedBox(width: 8),
                           Expanded(
                             child: Text(
-                              'Với tài khoản Gmail, bạn cần bật 2-Step Verification trong Tài khoản Google và tạo "Mật khẩu ứng dụng" (App Password) 16 ký tự để điền vào phần mật khẩu trên.',
+                              'For Gmail accounts, you need to enable 2-Step Verification in your Google Account and create a 16-character "App Password" to fill in the password field above.',
                               style: TextStyle(
                                   color: Colors.blue.shade900,
                                   fontSize: 12,
@@ -198,7 +196,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                     SwitchListTile(
                       activeColor: const Color(0xFF00C18A),
                       contentPadding: EdgeInsets.zero,
-                      title: const Text('Kết nối bảo mật (SSL/TLS)',
+                      title: const Text('Secure connection (SSL/TLS)',
                           style: TextStyle(
                               fontWeight: FontWeight.bold, fontSize: 14)),
                       value: isSecure,
@@ -232,17 +230,17 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                       );
                                       if (context.mounted) {
                                         _showStatusDialog(
-                                          title: 'Kết nối thành công',
+                                          title: 'Connection successful',
                                           content:
-                                              'Đã đăng nhập thành công vào email!',
+                                              'Connected to email successfully!',
                                           isSuccess: true,
                                         );
                                       }
                                     } catch (e) {
                                       if (context.mounted) {
                                         _showStatusDialog(
-                                          title: 'Kết nối thất bại',
-                                          content: 'Lỗi: $e',
+                                          title: 'Connection failed',
+                                          content: 'Error: $e',
                                           isSuccess: false,
                                         );
                                       }
@@ -259,7 +257,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                         color: Color(0xFF00C18A)))
                                 : const Icon(Icons.cable,
                                     color: Color(0xFF00C18A)),
-                            label: const Text('Thử Kết Nối',
+                            label: const Text('Test Connection',
                                 style: TextStyle(
                                     color: Color(0xFF00C18A),
                                     fontWeight: FontWeight.bold)),
@@ -308,15 +306,15 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(isEdit
-                                        ? 'Đã cập nhật tài khoản!'
-                                        : 'Đã thêm tài khoản email mới!'),
+                                        ? 'Updated email account successfully!'
+                                        : 'Added new email account successfully!'),
                                     backgroundColor: const Color(0xFF00C18A),
                                   ),
                                 );
                               }
                             },
                             icon: const Icon(Icons.save, color: Colors.white),
-                            label: const Text('Lưu cấu hình',
+                            label: const Text('Save configuration',
                                 style: TextStyle(
                                     color: Colors.white,
                                     fontWeight: FontWeight.bold)),
@@ -337,8 +335,8 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
   Future<void> _runSync() async {
     if (_accounts.isEmpty) {
       _showStatusDialog(
-        title: 'Cần thiết lập',
-        content: 'Vui lòng thêm ít nhất một tài khoản email trước khi đồng bộ.',
+        title: 'Need Setup',
+        content: 'Please add at least one email account before syncing.',
         isSuccess: false,
       );
       return;
@@ -349,17 +347,17 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
       final newTxns = await _syncService.syncEmails();
       if (mounted) {
         _showStatusDialog(
-          title: 'Đồng bộ hoàn tất',
+          title: 'Sync Completed',
           content:
-              'Đã hoàn thành đồng bộ email ngân hàng.\nTìm thấy và ghi nhận: $newTxns giao dịch mới.',
+              'Bank email sync completed.\nFound and recorded: $newTxns new transactions.',
           isSuccess: true,
         );
       }
     } catch (e) {
       if (mounted) {
         _showStatusDialog(
-          title: 'Lỗi đồng bộ',
-          content: 'Đã xảy ra lỗi trong quá trình đồng bộ email.\nChi tiết: $e',
+          title: 'Sync Failed',
+          content: 'An error occurred during email sync.\nDetails: $e',
           isSuccess: false,
         );
       }
@@ -392,7 +390,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đồng ý',
+            child: const Text('OK',
                 style: TextStyle(
                     color: Color(0xFF00C18A), fontWeight: FontWeight.bold)),
           ),
@@ -442,12 +440,12 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Center(child: SizedBox(width: 50, height: 5)),
-                  const Text('Giả Lập Email Ngân Hàng',
+                  const Text('Simulate Bank Email',
                       style:
                           TextStyle(fontSize: 20, fontWeight: FontWeight.w800)),
                   const SizedBox(height: 4),
                   const Text(
-                      'Kiểm tra tính năng tự động trích xuất giao dịch mà không cần thông tin thật.',
+                      'Test the automatic transaction extraction feature without needing real information.',
                       style: TextStyle(fontSize: 13, color: Colors.black54)),
                   const SizedBox(height: 16),
                   const Text('Chọn mẫu Email có sẵn:',
@@ -498,7 +496,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                         _runSimulatedSync(
                             selectedBank, customBodyController.text);
                       },
-                      child: const Text('Chạy Giả Lập Ghi Nhận',
+                      child: const Text('Run Simulated Record',
                           style: TextStyle(
                               color: Colors.white,
                               fontWeight: FontWeight.bold)),
@@ -520,7 +518,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
     } catch (e) {
       if (mounted)
         _showStatusDialog(
-            title: 'Lỗi hệ thống', content: 'Lỗi: $e', isSuccess: false);
+            title: 'System Error', content: 'Error: $e', isSuccess: false);
     }
   }
 
@@ -529,11 +527,11 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
       context: context,
       builder: (context) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        content: Text('Ghi nhận thành công: ${txn.title} - ${txn.amount}'),
+        content: Text('Successfully recorded: ${txn.title} - ${txn.amount}'),
         actions: [
           ElevatedButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Tuyệt vời',
+            child: const Text('Great',
                 style: TextStyle(
                     color: Colors.white, fontWeight: FontWeight.bold)),
           ),
@@ -570,7 +568,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                   ),
                   const Expanded(
                       child: Center(
-                          child: Text('Đồng Bộ Email Ngân Hàng',
+                          child: Text('Bank Email Sync',
                               style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 20,
@@ -614,14 +612,14 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                         Icon(Icons.mail_lock,
                                             color: Colors.white, size: 24),
                                         SizedBox(width: 8),
-                                        Text('Ghi nhận tự động',
+                                        Text('Automatic Recording',
                                             style: TextStyle(
                                                 color: Colors.white,
                                                 fontWeight: FontWeight.bold))
                                       ]),
                                       const SizedBox(height: 8),
                                       const Text(
-                                          'Đồng bộ hóa các biến động số dư được gửi về email của bạn.',
+                                          'Sync balance changes sent to your email.',
                                           style: TextStyle(
                                               color: Colors.white70,
                                               fontSize: 13)),
@@ -633,7 +631,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                           onPressed: _openSimulationSheet,
                                           icon:
                                               const Icon(Icons.bolt, size: 18),
-                                          label: const Text('Chạy Thử')),
+                                          label: const Text('Run Test')),
                                     ],
                                   ),
                                 ),
@@ -642,7 +640,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('DANH SÁCH TÀI KHOẢN EMAIL',
+                                    const Text('EMAIL ACCOUNT LIST',
                                         style: TextStyle(
                                             fontWeight: FontWeight.w800,
                                             fontSize: 14,
@@ -658,7 +656,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                       padding: const EdgeInsets.all(32),
                                       alignment: Alignment.center,
                                       child: const Text(
-                                          'Chưa có tài khoản email nào'))
+                                          'No email accounts configured'))
                                 else
                                   ..._accounts.map((account) {
                                     return Container(
@@ -716,7 +714,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                         color: Colors.white)
                                     : const Icon(Icons.sync,
                                         color: Colors.white),
-                                label: const Text('Đồng Bộ Ngay',
+                                label: const Text('Sync Now',
                                     style: TextStyle(
                                         color: Colors.white,
                                         fontWeight: FontWeight.bold)),
