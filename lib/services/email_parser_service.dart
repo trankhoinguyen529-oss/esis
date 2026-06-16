@@ -23,23 +23,39 @@ class EmailParserService {
   static ParsedEmailTransaction? parse(
       String from, String subject, String body) {
     final cleanFrom = from.toLowerCase();
-    final cleanSubject = _removeDiacritics(subject.toLowerCase());
-    final cleanBody = _removeDiacritics(body.toLowerCase());
 
-    // Check if it looks like a bank transaction email
-    bool isBankEmail = cleanFrom.contains('vietcombank') ||
+    // Check if sender is a recognized bank or the test sender 'manh'
+    final isFromBankOrTest = cleanFrom.contains('vietcombank') ||
         cleanFrom.contains('tpb') ||
         cleanFrom.contains('techcombank') ||
         cleanFrom.contains('mbbank') ||
         cleanFrom.contains('acb') ||
-        cleanFrom.contains('manh') ||
-        cleanSubject.contains('bien dong so du') ||
+        cleanFrom.contains('manh');
+
+    if (!isFromBankOrTest) return null;
+
+    // Strip HTML from body to avoid matching inside tags or CSS styles
+    String tempBody = body;
+    if (body.contains('<') && body.contains('>')) {
+      tempBody = body.replaceAll(RegExp(r'<[^>]*>'), ' ');
+    }
+
+    final cleanSubject = _removeDiacritics(subject.toLowerCase());
+    final cleanBody = _removeDiacritics(tempBody.toLowerCase());
+
+    // Check for clear transaction keywords to prevent parsing general emails (like warnings, personal chats)
+    bool hasTransactionKeywords = cleanSubject.contains('bien dong') ||
         cleanSubject.contains('giao dich') ||
         cleanSubject.contains('sao ke') ||
-        cleanBody.contains('tai khoan') ||
-        cleanBody.contains('so tien gd');
+        cleanBody.contains('so tien') ||
+        cleanBody.contains('so du') ||
+        cleanBody.contains('vietcombank') ||
+        cleanBody.contains('tpbank') ||
+        cleanBody.contains('techcombank') ||
+        cleanBody.contains('mbbank') ||
+        cleanBody.contains('acb');
 
-    if (!isBankEmail) return null;
+    if (!hasTransactionKeywords) return null;
 
     String bankName = 'Bank';
     if (cleanFrom.contains('vietcombank') ||
@@ -122,6 +138,9 @@ class EmailParserService {
             cleanBody.contains('d'))) {
       appAmount = rawAmount / 25000.0;
     }
+
+    // Reject transactions without any valid parsed positive amount
+    if (appAmount <= 0) return null;
 
     // 3. Parse Description / Content
     String description = '';

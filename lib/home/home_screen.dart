@@ -30,12 +30,32 @@ class _HomeState extends State<Home> {
   void initState() {
     super.initState();
     _loadSummary();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoSyncEmails();
+    });
   }
 
   @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _autoSyncEmails() async {
+    try {
+      final newTxns = await BankEmailSyncService().syncEmails();
+      if (newTxns > 0 && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Tự động đồng bộ: Đã thêm $newTxns giao dịch mới từ email!'),
+            backgroundColor: const Color(0xFF00C18A),
+          ),
+        );
+        _loadSummary();
+      }
+    } catch (e) {
+      debugPrint('Auto sync failed silently: $e');
+    }
   }
 
   Future<void> _loadSummary() async {
@@ -61,9 +81,8 @@ class _HomeState extends State<Home> {
 
     try {
       final newTxns = await BankEmailSyncService().syncEmails();
-      Navigator.pop(context);
-      
       if (mounted) {
+        Navigator.pop(context);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Đồng bộ thành công! Đã ghi nhận thêm $newTxns giao dịch.'),
@@ -73,9 +92,8 @@ class _HomeState extends State<Home> {
         _loadSummary();
       }
     } catch (e) {
-      Navigator.pop(context);
-      
       if (mounted) {
+        Navigator.pop(context);
         showDialog(
           context: context,
           builder: (context) => AlertDialog(

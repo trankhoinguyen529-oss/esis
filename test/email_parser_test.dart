@@ -72,5 +72,42 @@ void main() {
       expect(parsed.amount, 14.0);
       expect(parsed.time, '14:00');
     });
+
+    test('Filter Google Security Alert - Should return null', () {
+      const body = 'Tài khoản của bạn manhnt0123@gmail.com vừa có hoạt động đăng nhập mới. Cảnh báo bảo mật.';
+      final parsed = EmailParserService.parse(
+        'no-reply@accounts.google.com',
+        'Cảnh báo bảo mật',
+        body,
+      );
+
+      expect(parsed, isNull);
+    });
+
+    test('Filter Personal Chat from test sender - Should return null', () {
+      const body = 'Chào bạn, trưa nay ăn gì thế? Mình đi ăn phở nhé.';
+      final parsed = EmailParserService.parse(
+        'manhnt0123@gmail.com',
+        'Ăn trưa',
+        body,
+      );
+
+      expect(parsed, isNull);
+    });
+
+    test('Sanitize HTML from test sender - Should parse correctly and strip tags', () {
+      const body = '<div style="color: red;">Vietcombank: So tien GD +2,500,000 VND. <td style="height:0px">Noi dung: Nhan luong thang 6</td></div>';
+      final parsed = EmailParserService.parse(
+        'manhnt0123@gmail.com',
+        'Giao dịch chuyển khoản',
+        body,
+      );
+
+      expect(parsed, isNotNull);
+      expect(parsed!.amount, 100.0); // 2,500,000 / 25,000 = 100.0 USD
+      expect(parsed.isExpense, false);
+      expect(parsed.description, 'Nhan luong thang 6'); // Verify HTML tag is stripped out
+      expect(parsed.category, 'Salary');
+    });
   });
 }
