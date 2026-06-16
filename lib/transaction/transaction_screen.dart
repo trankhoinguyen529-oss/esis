@@ -10,6 +10,7 @@ class TransactionScreen extends StatefulWidget {
   Set<String> selectedCategories = {};
   String selectedTitle = 'All';
   String selectedType = 'All';
+  String selectedBank = 'All';
   double selectedAmountFrom = 0.00;
   double selectedAmountTo = 0.00;
   TransactionScreen({
@@ -52,6 +53,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
           selectedDateTo: widget.selectedDateTo,
           selectedTitle: widget.selectedTitle,
           selectedType: widget.selectedType,
+          selectedBank: widget.selectedBank,
         ),
       ),
     );
@@ -59,6 +61,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     if (result != null) {
       setState(() {
         widget.selectedType = result['type'];
+        widget.selectedBank = result['bank'];
         widget.selectedCategories = result['categories'];
         widget.selectedTitle = result['title'];
         widget.selectedAmountFrom = result['amountFrom'];
@@ -74,6 +77,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
     setState(() => _summaryLoading = true);
     final summary = await DatabaseService().getSummaryByFilter(
       widget.selectedType,
+      widget.selectedBank,
       widget.selectedCategories,
       widget.selectedTitle,
       widget.selectedAmountFrom,
@@ -284,6 +288,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     child: Displaytransaction().displayTransaction(
                       period: -1,
                       type: widget.selectedType,
+                      bank: widget.selectedBank,
                       categories: widget.selectedCategories,
                       title: widget.selectedTitle,
                       amountFrom: widget.selectedAmountFrom,

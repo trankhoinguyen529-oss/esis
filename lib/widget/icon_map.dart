@@ -41,3 +41,11 @@ class TypeItem {
     'All': Icons.menu,
   };
 }
+
+class BankItem {
+  static const Map<String, IconData> icons = {
+    'All': Icons.menu,
+    'Manual': Icons.edit_note,
+    'Bank': Icons.account_balance_rounded,
+  };
+}

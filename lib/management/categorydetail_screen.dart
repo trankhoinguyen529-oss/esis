@@ -131,6 +131,7 @@ class _CategorydetailState extends State<Categorydetail> {
                           child: displaytransaction.displayTransaction(
                         period: -1,
                         type: 'All',
+                        bank: 'All',
                         categories: {widget.category},
                         title: '',
                         amountFrom: 0.00,

@@ -423,7 +423,8 @@ class _HomeTransactionList extends StatelessWidget {
   Widget build(BuildContext context) {
     return Displaytransaction().displayTransaction(
       period: period,
-      type: '',
+      type: 'All',
+      bank: 'All',
       categories: {},
       title: '',
       amountFrom: 0.00,

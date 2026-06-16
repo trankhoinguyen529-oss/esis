@@ -11,6 +11,7 @@ class TransactionFilterScreen extends StatefulWidget {
   Set<String> selectedCategories = {'All'};
   String selectedTitle = '';
   String selectedType = 'All';
+  String selectedBank = 'All';
   double selectedAmountFrom = 0.00;
   double selectedAmountTo = 1000000000000.00;
   TransactionFilterScreen({
@@ -20,6 +21,7 @@ class TransactionFilterScreen extends StatefulWidget {
     required this.selectedTitle,
     required this.selectedCategories,
     required this.selectedType,
+    required this.selectedBank,
     required this.selectedAmountFrom,
     required this.selectedAmountTo,
   });
@@ -96,6 +98,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
           leading: GestureDetector(
             onTap: () => Navigator.of(context).pop({
               'type': widget.selectedType,
+              'bank': widget.selectedBank,
               'categories': widget.selectedCategories,
               'title': _titleCtrl.text.trim(), // ✅
               'amountFrom':
@@ -142,7 +145,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                     children: [
                       const SizedBox(height: 20),
                       // // Income/Expense field
-                      _textfield.buildLabel('Type'),
+                      _textfield.buildLabel('Income/Expense'),
                       const SizedBox(height: 8),
                       _textfield.buildFormField_1(
                         context: context,
@@ -153,6 +156,19 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                         selectedKey: widget.selectedType,
                       ),
                       const SizedBox(height: 8),
+                      //Bank/Manual field
+                      _textfield.buildLabel('Bank/Manual'),
+                      const SizedBox(height: 8),
+                      _textfield.buildFormField_1(
+                        context: context,
+                        icons: BankItem.icons,
+                        ifSelected: (selected) {
+                          setState(() => widget.selectedBank = selected);
+                        },
+                        selectedKey: widget.selectedBank,
+                      ),
+                      const SizedBox(height: 8),
+
                       // Category field
                       _textfield.buildLabel('Category'),
                       const SizedBox(height: 8),
@@ -384,6 +400,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                                 onPressed: () {
                                   Navigator.of(context).pop({
                                     'type': widget.selectedType,
+                                    'bank': widget.selectedBank,
                                     'categories': widget.selectedCategories,
                                     'title': _titleCtrl.text.trim(), // ✅
                                     'amountFrom': double.tryParse(

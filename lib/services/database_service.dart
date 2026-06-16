@@ -174,17 +174,19 @@ class DatabaseService {
   }
 
   // Lấy giao dịch theo bộ lọc
-  Future<List<TransactionItem>> getTransactionsByFilter(
-    String type,
-    Set<String> categories,
-    String title,
-    double amountFrom,
-    double amountTo,
-    DateTime dateFrom,
-    DateTime dateTo,
-  ) async {
+  Future<List<TransactionItem>> getTransactionsByFilter({
+    required String type, //income_expense
+    required String bank, // bank?
+    required Set<String> categories,
+    required String title,
+    required double amountFrom,
+    required double amountTo,
+    required DateTime dateFrom,
+    required DateTime dateTo,
+  }) async {
     final all = await getAllTransactions();
     bool isExpense = (type == 'Expense') ? true : false;
+    bool isBank = (bank == 'Bank') ? true : false;
     return all.where((item) {
       return ((item.title == title || title == '') &&
           (item.amount <= amountTo && item.amount >= amountFrom) &&
@@ -192,7 +194,8 @@ class DatabaseService {
           (!(item.date).isBefore(dateFrom) && !(item.date).isAfter(dateTo)) &&
           (categories.contains(item.category) ||
               categories.isEmpty ||
-              categories.contains('All')));
+              categories.contains('All')) &&
+          (item.isBank == isBank || bank == 'All'));
     }).toList();
   }
 
@@ -216,6 +219,7 @@ class DatabaseService {
   //Tính income và expense theo bộ lọc
   Future<Map<String, double>> getSummaryByFilter(
     String type,
+    String bank,
     Set<String> categories,
     String title,
     double amountFrom,
@@ -224,13 +228,14 @@ class DatabaseService {
     DateTime dateTo,
   ) async {
     final items = await getTransactionsByFilter(
-      type,
-      categories,
-      title,
-      amountFrom,
-      amountTo,
-      dateFrom,
-      dateTo,
+      type: type,
+      categories: categories,
+      title: title,
+      amountFrom: amountFrom,
+      amountTo: amountTo,
+      dateFrom: dateFrom,
+      dateTo: dateTo,
+      bank: bank,
     );
 
     double income = 0;

@@ -10,6 +10,7 @@ class Displaytransaction {
   Widget displayTransaction({
     required int period,
     required String type,
+    required String bank,
     required Set<String> categories,
     required String title,
     required double amountFrom,
@@ -21,7 +22,14 @@ class Displaytransaction {
     final Future<List<TransactionItem>> future;
     if (period == -1) {
       future = DatabaseService().getTransactionsByFilter(
-          type, categories, title, amountFrom, amountTo, dateFrom, dateTo);
+          type: type,
+          categories: categories,
+          title: title,
+          amountFrom: amountFrom,
+          amountTo: amountTo,
+          dateFrom: dateFrom,
+          dateTo: dateTo,
+          bank: bank);
     } else
       future = DatabaseService().getTransactionsByPeriod(period);
 
