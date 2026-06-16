@@ -1,7 +1,6 @@
 import 'package:a_management/widget/icon_map.dart';
 import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
-import 'add_transaction_screen.dart';
 import 'package:a_management/widget/widget.dart';
 
 class ManagementScreen extends StatelessWidget {
@@ -89,13 +88,13 @@ class ManagementScreen extends StatelessWidget {
                         CategoryTile categoryTile = CategoryTile();
                         return categoryTile.build(
                           context,
-                          cat.value as IconData,
-                          cat.key as String,
+                          cat.value,
+                          cat.key,
                           () async {
                             final result = await Navigator.of(context).push(
                               MaterialPageRoute(
                                 builder: (_) => Categorydetail(
-                                  category: cat.key as String,
+                                  category: cat.key,
                                 ),
                               ),
                             );

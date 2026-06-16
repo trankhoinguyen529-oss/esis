@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/services.dart';
 import 'firebase_options.dart';
 import 'login/splash_screen.dart';
 import 'services/database_service.dart';
@@ -15,6 +16,10 @@ void main() async {
   if (FirebaseAuth.instance.currentUser != null) {
     await DatabaseService().printAllTransactions();
   }
+
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp, // ✅ chỉ cho phép dọc
+  ]);
 
   runApp(const MyApp());
 }
