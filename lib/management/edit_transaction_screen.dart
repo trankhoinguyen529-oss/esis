@@ -336,6 +336,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                             controller: _amountCtrl,
                             hint: '0.00',
                             icon: Icons.attach_money,
+                            disabled: isBank,
                             keyboardType: TextInputType.none,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
@@ -359,40 +360,40 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       _textField.buildLabel('Date'),
                       const SizedBox(height: 8),
                       GestureDetector(
-                        onTap: (!isBank)
-                            ? () {
-                                _pickdate.PickDate(
-                                  context: context,
-                                  selectedDate: selectedDate,
-                                  ifPicked: (picked) {
-                                    setState(() => selectedDate = picked);
-                                  },
-                                );
-                              }
-                            : () {},
+                        onTap: () {
+                          _pickdate.PickDate(
+                            context: context,
+                            selectedDate: selectedDate,
+                            disabled: isBank,
+                            ifPicked: (picked) {
+                              setState(() => selectedDate = picked);
+                            },
+                          );
+                        },
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 16),
                           decoration: BoxDecoration(
-                            color: Colors.white,
+                            color: isBank ? Colors.grey[200] : Colors.white,
                             borderRadius: BorderRadius.circular(16),
                             border: Border.all(color: Colors.black12),
                           ),
                           child: Row(
                             children: [
-                              const Icon(Icons.calendar_today,
-                                  color: primary, size: 22),
+                              Icon(Icons.calendar_today,
+                                  color: isBank ? Colors.black38 : primary, size: 22),
                               const SizedBox(width: 12),
                               Text(
                                 dateStr,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
+                                  color: isBank ? Colors.black54 : Colors.black87,
                                 ),
                               ),
                               const Spacer(),
-                              const Icon(Icons.chevron_right,
-                                  color: Colors.black38),
+                              Icon(Icons.chevron_right,
+                                  color: isBank ? Colors.black12 : Colors.black38),
                             ],
                           ),
                         ),

@@ -8,7 +8,9 @@ class Pickdate {
     required BuildContext context,
     required DateTime selectedDate,
     required Function(DateTime) ifPicked,
+    bool disabled = false,
   }) async {
+    if (disabled) return;
     final picked = await showDatePicker(
       context: context,
       initialDate: selectedDate,

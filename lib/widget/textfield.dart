@@ -22,17 +22,22 @@ class Textfield {
     TextInputType? keyboardType,
     List<TextInputFormatter>? inputFormatters,
     String? Function(String?)? validator,
+    bool disabled = false,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       inputFormatters: inputFormatters,
       validator: validator,
+      enabled: !disabled,
+      style: TextStyle(
+        color: disabled ? Colors.black54 : Colors.black87,
+      ),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: primary, size: 22),
+        prefixIcon: Icon(icon, color: disabled ? Colors.black38 : primary, size: 22),
         filled: true,
-        fillColor: Colors.white,
+        fillColor: disabled ? Colors.grey[200] : Colors.white,
         contentPadding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
@@ -40,6 +45,10 @@ class Textfield {
           borderSide: const BorderSide(color: Colors.black12),
         ),
         enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Colors.black12),
+        ),
+        disabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(16),
           borderSide: const BorderSide(color: Colors.black12),
         ),
