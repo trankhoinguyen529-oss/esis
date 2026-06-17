@@ -164,6 +164,25 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
               fontSize: 24,
             ),
           ),
+          actions: [
+            if (isBank)
+              Container(
+                height: 40,
+                width: 40,
+                margin: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.blue,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: const Icon(
+                  Icons.account_balance_rounded,
+                  size: 20, // ✅ icon nhỏ vừa với container
+                  color: Colors.white,
+                ),
+              ),
+            const SizedBox(width: 8),
+          ],
           centerTitle: true,
         ),
         body: Column(
@@ -464,6 +483,15 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                           ),
                         ],
                       ),
+                      const SizedBox(height: 20),
+                      if (isBank)
+                        Text(
+                          '(*) You cannot change type, amount or date of bank transactions',
+                          style: TextStyle(
+                            color: Colors.red,
+                            fontSize: 12,
+                          ),
+                        )
                     ],
                   ),
                 ),

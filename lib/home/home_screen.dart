@@ -1,3 +1,5 @@
+import 'package:a_management/management/add_transaction_screen.dart';
+import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import '../profile/profile_screen.dart';
@@ -11,13 +13,15 @@ import '../profile/bank_email_sync_screen.dart';
 import 'dart:async';
 
 class Home extends StatefulWidget {
-  const Home({super.key});
+  const Home({super.key, this.onTransactionAdded});
+  final VoidCallback? onTransactionAdded;
 
   @override
   State<Home> createState() => _HomeState();
 }
 
 class _HomeState extends State<Home> {
+  bool addButton = true;
   final AuthService _authService = AuthService();
   final PageController _pageController = PageController();
   int _selectedPeriod = 2; // 0: Daily, 1: Weekly, 2: Monthly
@@ -193,12 +197,42 @@ class _HomeState extends State<Home> {
       ),
       bottomNavigationBar: TabIcon(
         selectedIndex: _selectedIconIndex,
-        onHome: () => _goToPage(0),
+        onHome: () {
+          _goToPage(0);
+          addButton = true;
+        },
         onAnalytics: () {},
-        onTransaction: () => _goToPage(1),
-        onManagement: () => _goToPage(2),
-        onProfile: () => _goToPage(3),
+        onTransaction: () {
+          _goToPage(1);
+          addButton = false;
+        },
+        onManagement: () {
+          _goToPage(2);
+          addButton = false;
+        },
+        onProfile: () {
+          _goToPage(3);
+          addButton = false;
+        },
       ),
+      floatingActionButton: addButton
+          ? SizedBox(
+              width: 84,
+              height: 84,
+              child: FloatingActionButton(
+                onPressed: () async {
+                  final result = await Navigator.of(context).push(
+                    MaterialPageRoute(
+                      builder: (_) => AddTransactionScreen(category: 'All'),
+                    ),
+                  );
+                  if (result == true) widget.onTransactionAdded?.call();
+                },
+                shape: const CircleBorder(),
+                child: const Icon(Icons.add, size: 40),
+              ),
+            )
+          : null, // ✅ null = không hiện
     );
   }
 
@@ -294,9 +328,10 @@ class _HomeState extends State<Home> {
                             )
                           : Text(
                               '\$${_income.toStringAsFixed(2)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
+                                color: primary,
                               ),
                             ),
                     ],
@@ -314,9 +349,9 @@ class _HomeState extends State<Home> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Icon(
+                      Icon(
                         Icons.trending_down,
-                        color: Colors.blue,
+                        color: Colors.red[400],
                         size: 30,
                       ),
                       const SizedBox(height: 4),
@@ -337,10 +372,10 @@ class _HomeState extends State<Home> {
                             )
                           : Text(
                               '\$${_expense.toStringAsFixed(2)}',
-                              style: const TextStyle(
+                              style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w800,
-                                color: Colors.blue,
+                                color: Colors.red[400],
                               ),
                             ),
                     ],
@@ -351,6 +386,21 @@ class _HomeState extends State<Home> {
           ),
         ),
         const SizedBox(height: 18),
+        //thanh biểu đồ
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: const Text('Nội dung'), // thay bằng widget bạn muốn
+          ),
+        ),
+        const SizedBox(height: 18),
+        //hiện giao dịch
         Expanded(
           child: Container(
             width: double.infinity,
@@ -401,10 +451,26 @@ class _HomeState extends State<Home> {
                     }),
                   ),
                 ),
-                const SizedBox(height: 18),
-                Expanded(
-                  child: _HomeTransactionList(period: _selectedPeriod),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // ✅
+                  children: [
+                    Row(
+                      children: [
+                        Icon(Icons.refresh_rounded, size: 24),
+                        SizedBox(width: 2),
+                        Text('Recent transactions')
+                      ],
+                    ),
+                    TextButton(
+                      onPressed: () {
+                        _goToPage(1);
+                        addButton = false;
+                      },
+                      child: Text('View all'),
+                    ),
+                  ],
                 ),
+                Expanded(child: _HomeTransactionList(period: _selectedPeriod)),
               ],
             ),
           ),

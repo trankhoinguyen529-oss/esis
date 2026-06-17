@@ -1,3 +1,4 @@
+import 'package:a_management/management/edit_transaction_screen.dart';
 import 'package:a_management/transaction/transaction_filter_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:a_management/widget/widget.dart';
@@ -205,13 +206,13 @@ class _TransactionScreenState extends State<TransactionScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.trending_down,
-                          color: Colors.blue,
+                          color: Colors.red[400],
                           size: 30,
                         ),
                         const SizedBox(height: 4),
-                        const Text(
+                        Text(
                           'Expense',
                           style: TextStyle(
                             fontSize: 14,
@@ -228,10 +229,10 @@ class _TransactionScreenState extends State<TransactionScreen> {
                               )
                             : Text(
                                 '\$${_expense.toStringAsFixed(2)}',
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
-                                  color: Colors.blue,
+                                  color: Colors.red[400],
                                 ),
                               ),
                       ],
@@ -295,7 +296,20 @@ class _TransactionScreenState extends State<TransactionScreen> {
                       amountTo: widget.selectedAmountTo,
                       dateFrom: widget.selectedDateFrom,
                       dateTo: widget.selectedDateTo,
-                      ontap: (int i) {},
+                      ontap: (int transactionId) async {
+                        final result = await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => EditTransactionScreen(
+                              id: transactionId,
+                            ),
+                          ),
+                        );
+
+                        //debugPrint('******Result: ${displaytransaction.transactionId}');
+                        if (result == true) {
+                          setState(() {});
+                        }
+                      },
                     ),
                   ),
                 ],

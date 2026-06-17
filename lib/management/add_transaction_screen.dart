@@ -7,12 +7,12 @@ import '../data/data_transaction.dart';
 import '../services/database_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
-  final String category;
+  final String? category;
   final VoidCallback? onSaved;
 
   const AddTransactionScreen({
     super.key,
-    required this.category,
+    this.category,
     this.onSaved,
   });
 
@@ -30,6 +30,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _isExpense = true;
   bool _isSaving = false;
   Textfield textfield = Textfield();
+  late String selectedCategory =
+      (widget.category != 'All') ? widget.category! : 'Others';
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
@@ -37,7 +39,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
-    _titleCtrl.text = widget.category;
+    _titleCtrl.text = selectedCategory;
   }
 
   @override
@@ -76,9 +78,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     final item = TransactionItem(
-      icon: CategoryItem.icons[widget.category]!,
+      icon: CategoryItem.icons[selectedCategory]!,
       title: _titleCtrl.text.trim(),
-      category: widget.category,
+      category: selectedCategory,
       time: timeStr,
       date: _selectedDate,
       amount: double.parse(_amountCtrl.text.trim()),
@@ -126,12 +128,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                   color: Colors.black87, size: 18),
             ),
           ),
-          title: const Text(
+          title: Text(
             'Add Transaction',
             style: TextStyle(
               color: Colors.black,
               fontWeight: FontWeight.w800,
-              fontSize: 20,
+              fontSize: (widget.category != 'All') ? 20 : 32,
             ),
           ),
           centerTitle: true,
@@ -141,29 +143,31 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
             // Category header
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 20),
-              child: Column(
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      color: surface,
-                      shape: BoxShape.circle,
-                    ),
-                    child: Icon(CategoryItem.icons[widget.category],
-                        color: primary, size: 36),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    widget.category,
-                    style: const TextStyle(
-                      color: Colors.black,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 18,
-                    ),
-                  ),
-                ],
-              ),
+              child: (widget.category != 'All')
+                  ? Column(
+                      children: [
+                        Container(
+                          width: 72,
+                          height: 72,
+                          decoration: const BoxDecoration(
+                            color: surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(CategoryItem.icons[widget.category],
+                              color: primary, size: 36),
+                        ),
+                        const SizedBox(height: 10),
+                        Text(
+                          selectedCategory,
+                          style: const TextStyle(
+                            color: Colors.black,
+                            fontWeight: FontWeight.w800,
+                            fontSize: 18,
+                          ),
+                        ),
+                      ],
+                    )
+                  : null,
             ),
             Expanded(
               child: Container(
@@ -265,6 +269,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      // Category field
+                      textfield.buildLabel('Category'),
+                      const SizedBox(height: 8),
+                      textfield.buildFormField_1(
+                        context: context,
+                        icons: CategoryItem.icons,
+                        excludedIcon: {'All', 'Bank'},
+                        ifSelected: (selected) {
+                          setState(() => selectedCategory = selected);
+                        },
+                        selectedKey: selectedCategory,
+                      ),
+                      const SizedBox(height: 16),
                       // Title field
                       textfield.buildLabel('Title'),
                       const SizedBox(height: 8),

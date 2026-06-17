@@ -175,7 +175,8 @@ class _TransactionItemWidget extends StatelessWidget {
                       ? '-\$${item.amount.toStringAsFixed(2)}'
                       : '+\$${item.amount.toStringAsFixed(2)}',
                   style: TextStyle(
-                    color: isExpense ? Colors.blue : const Color(0xFF00C18A),
+                    color:
+                        isExpense ? Colors.red[400] : const Color(0xFF00C18A),
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
                   ),
