@@ -226,7 +226,10 @@ class _HomeState extends State<Home> {
                       builder: (_) => AddTransactionScreen(category: 'All'),
                     ),
                   );
-                  if (result == true) widget.onTransactionAdded?.call();
+                  if (result == true) {
+                    widget.onTransactionAdded?.call();
+                    _loadSummary();
+                  }
                 },
                 shape: const CircleBorder(),
                 child: const Icon(Icons.add, size: 40),
@@ -262,18 +265,6 @@ class _HomeState extends State<Home> {
                   ],
                 ),
               ),
-              // GestureDetector(
-              //   onTap: _syncBankEmails,
-              //   child: Container(
-              //     width: 40,
-              //     height: 40,
-              //     decoration: BoxDecoration(
-              //       color: surface,
-              //       shape: BoxShape.circle,
-              //     ),
-              //     child: const Icon(Icons.sync, color: Colors.black87),
-              //   ),
-              // ),
               const SizedBox(width: 8),
               GestureDetector(
                 onTap: () {},
@@ -291,187 +282,147 @@ class _HomeState extends State<Home> {
           ),
         ),
         const SizedBox(height: 18),
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Row(
-            children: [
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.trending_up,
-                        color: Color(0xFF00C18A),
-                        size: 30,
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Income',
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w800,
-                          color: Colors.black54,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      _summaryLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 60,
-                              child: LinearProgressIndicator(),
-                            )
-                          : Text(
-                              '\$${_income.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: primary,
-                              ),
-                            ),
-                    ],
-                  ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: surface,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        Icons.trending_down,
-                        color: Colors.red[400],
-                        size: 30,
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Expense',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.black54,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      _summaryLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 60,
-                              child: LinearProgressIndicator(),
-                            )
-                          : Text(
-                              '\$${_expense.toStringAsFixed(2)}',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w800,
-                                color: Colors.red[400],
-                              ),
-                            ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 18),
-        //thanh biểu đồ
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 20),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: const Text('Nội dung'), // thay bằng widget bạn muốn
-          ),
-        ),
-        const SizedBox(height: 18),
-        //hiện giao dịch
         Expanded(
-          child: Container(
-            width: double.infinity,
-            decoration: BoxDecoration(
-              color: surface,
-              borderRadius: const BorderRadius.vertical(
-                top: Radius.circular(36),
-              ),
-            ),
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
-            child: Column(
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: const Color.fromRGBO(255, 255, 255, 0.6),
-                    borderRadius: BorderRadius.circular(30),
-                  ),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: List.generate(3, (i) {
-                      final labels = ['Daily', 'Weekly', 'Monthly'];
-                      final selected = _selectedPeriod == i;
-                      return GestureDetector(
-                        onTap: () {
-                          setState(() => _selectedPeriod = i);
-                          _loadSummary();
-                        },
-                        child: Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: selected ? primary : Colors.transparent,
-                            borderRadius: BorderRadius.circular(24),
-                          ),
-                          child: Text(
-                            labels[i],
-                            style: TextStyle(
-                              fontSize: 18,
-                              color: selected ? Colors.white : Colors.black54,
-                              fontWeight: FontWeight.w700,
+          child: NestedScrollView(
+            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+              return [
+                SliverToBoxAdapter(
+                  child: Column(
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(
+                                      Icons.trending_up,
+                                      color: Color(0xFF00C18A),
+                                      size: 30,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'Income',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w800,
+                                        color: Colors.black54,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    _summaryLoading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 60,
+                                            child: LinearProgressIndicator(),
+                                          )
+                                        : Text(
+                                            '\$${_income.toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                              color: primary,
+                                            ),
+                                          ),
+                                  ],
+                                ),
+                              ),
                             ),
-                          ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Container(
+                                padding: const EdgeInsets.all(16),
+                                decoration: BoxDecoration(
+                                  color: surface,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Icon(
+                                      Icons.trending_down,
+                                      color: Colors.red[400],
+                                      size: 30,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    const Text(
+                                      'Expense',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.black54,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 6),
+                                    _summaryLoading
+                                        ? const SizedBox(
+                                            height: 20,
+                                            width: 60,
+                                            child: LinearProgressIndicator(),
+                                          )
+                                        : Text(
+                                            '\$${_expense.toStringAsFixed(2)}',
+                                            style: TextStyle(
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.w800,
+                                              color: Colors.red[400],
+                                            ),
+                                          ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
-                      );
-                    }),
+                      ),
+                      const SizedBox(height: 18),
+                      //thanh biểu đồ
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Text('Nội dung'), // thay bằng widget bạn muốn
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                    ],
                   ),
                 ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween, // ✅
-                  children: [
-                    Row(
-                      children: [
-                        Icon(Icons.refresh_rounded, size: 24),
-                        SizedBox(width: 2),
-                        Text('Recent transactions')
-                      ],
-                    ),
-                    TextButton(
-                      onPressed: () {
-                        _goToPage(1);
-                        addButton = false;
-                      },
-                      child: Text('View all'),
-                    ),
-                  ],
+                SliverPersistentHeader(
+                  pinned: true,
+                  delegate: _HomeHeaderDelegate(
+                    primary: primary,
+                    surface: surface,
+                    selectedPeriod: _selectedPeriod,
+                    onPeriodSelected: (i) {
+                      setState(() => _selectedPeriod = i);
+                      _loadSummary();
+                    },
+                    onViewAll: () {
+                      _goToPage(1);
+                      addButton = false;
+                    },
+                  ),
                 ),
-                Expanded(child: _HomeTransactionList(period: _selectedPeriod)),
-              ],
+              ];
+            },
+            body: Container(
+              color: surface,
+              padding: const EdgeInsets.symmetric(horizontal: 18),
+              child: _HomeTransactionList(period: _selectedPeriod),
             ),
           ),
         ),
@@ -498,6 +449,112 @@ class _HomeTransactionList extends StatelessWidget {
       dateFrom: DateTime(2025, 1, 1),
       dateTo: DateTime(2027, 1, 1),
       ontap: (int i) {},
+      padding: const EdgeInsets.only(top: 8, bottom: 80),
     );
+  }
+}
+
+class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
+  final Color primary;
+  final Color surface;
+  final int selectedPeriod;
+  final ValueChanged<int> onPeriodSelected;
+  final VoidCallback onViewAll;
+
+  _HomeHeaderDelegate({
+    required this.primary,
+    required this.surface,
+    required this.selectedPeriod,
+    required this.onPeriodSelected,
+    required this.onViewAll,
+  });
+
+  @override
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
+    return SizedBox(
+      height: 135.0,
+      child: Container(
+        color: primary,
+        child: Container(
+          decoration: BoxDecoration(
+            color: surface,
+            borderRadius: const BorderRadius.vertical(
+              top: Radius.circular(36),
+            ),
+          ),
+          padding: const EdgeInsets.fromLTRB(18, 18, 18, 0),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color.fromRGBO(255, 255, 255, 0.6),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: List.generate(3, (i) {
+                    final labels = ['Daily', 'Weekly', 'Monthly'];
+                    final selected = selectedPeriod == i;
+                    return GestureDetector(
+                      onTap: () => onPeriodSelected(i),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 18,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: selected ? primary : Colors.transparent,
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        child: Text(
+                          labels[i],
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: selected ? Colors.white : Colors.black54,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                    );
+                  }),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Row(
+                    children: const [
+                      Icon(Icons.refresh_rounded, size: 24),
+                      SizedBox(width: 2),
+                      Text('Recent transactions')
+                    ],
+                  ),
+                  TextButton(
+                    onPressed: onViewAll,
+                    child: const Text('View all'),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  @override
+  double get maxExtent => 135.0;
+
+  @override
+  double get minExtent => 135.0;
+
+  @override
+  bool shouldRebuild(covariant _HomeHeaderDelegate oldDelegate) {
+    return oldDelegate.selectedPeriod != selectedPeriod ||
+        oldDelegate.primary != primary ||
+        oldDelegate.surface != surface;
   }
 }

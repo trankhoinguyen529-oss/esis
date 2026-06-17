@@ -18,6 +18,9 @@ class Displaytransaction {
     required DateTime dateFrom,
     required DateTime dateTo,
     required Function(int) ontap,
+    EdgeInsetsGeometry? padding,
+    ScrollPhysics? physics,
+    bool shrinkWrap = false,
   }) {
     final Future<List<TransactionItem>> future;
     if (period == -1) {
@@ -63,6 +66,9 @@ class Displaytransaction {
           );
         }
         return ListView.builder(
+          padding: padding,
+          physics: physics,
+          shrinkWrap: shrinkWrap,
           itemCount: transactions.length,
           itemBuilder: (context, index) {
             final item = transactions[index];
