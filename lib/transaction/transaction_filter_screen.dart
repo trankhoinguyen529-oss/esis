@@ -150,6 +150,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       _textfield.buildFormField_1(
                         context: context,
                         icons: TypeItem.icons,
+                        excludedIcon: {},
                         ifSelected: (selected) {
                           setState(() => widget.selectedType = selected);
                         },
@@ -162,6 +163,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       _textfield.buildFormField_1(
                         context: context,
                         icons: BankItem.icons,
+                        excludedIcon: {},
                         ifSelected: (selected) {
                           setState(() => widget.selectedBank = selected);
                         },
@@ -174,7 +176,8 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       const SizedBox(height: 8),
                       _textfield.buildFormField_M(
                         context: context,
-                        icons: CategoryItem.icons2,
+                        icons: CategoryItem.icons,
+                        excludedIcon: {'Bank'},
                         ifSelected: (selected) {
                           setState(() => widget.selectedCategories = selected);
                         },

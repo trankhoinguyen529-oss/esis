@@ -210,7 +210,7 @@ class BankEmailSyncService {
           if (parsed == null) continue;
 
           // Mapping to IconData
-          IconData categoryIcon = Icons.more_horiz;
+          IconData categoryIcon = Icons.account_balance_rounded;
 
           final transaction = TransactionItem(
             icon: categoryIcon,

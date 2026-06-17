@@ -217,8 +217,8 @@ class EmailParserService {
       isExpense: isExpense,
       date: date,
       time: time,
-      category: 'Others',
-      description: 'Quick transaction',
+      category: 'Bank',
+      description: 'Bank transaction',
       isBank: true,
     );
   }

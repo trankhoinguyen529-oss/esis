@@ -29,8 +29,9 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   bool _showNumPad = false;
 
   DateTime selectedDate = DateTime.now();
-  bool _isExpense = true;
-  bool _isSaving = false;
+  bool isExpense = true;
+  bool isSaving = false;
+  bool isBank = true;
   String selectedCategory = '';
   String selectedTitle = '';
   double selectedAmount = 0.00;
@@ -63,7 +64,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
 
     setState(() {
       item = result;
-      _isExpense = item!.isExpense;
+      isExpense = item!.isExpense;
+      isBank = item!.isBank;
       selectedCategory = item!.category;
       selectedAmount = item!.amount;
       selectedTitle = item!.title;
@@ -84,7 +86,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     if (!_formKey.currentState!.validate()) return;
     if (item == null) return;
 
-    setState(() => _isSaving = true);
+    setState(() => isSaving = true);
 
     final timeStr = item!.time;
     final updatedItem = TransactionItem(
@@ -96,13 +98,14 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       time: timeStr,
       date: selectedDate,
       amount: double.parse(_amountCtrl.text.trim()),
-      isExpense: _isExpense,
+      isExpense: isExpense,
+      isBank: isBank,
     );
 
     await db.updateTransaction(updatedItem);
 
     if (mounted) {
-      setState(() => _isSaving = false);
+      setState(() => isSaving = false);
       widget.onSaved?.call();
       Appsnackbar.success_snackbar(context, 'Changes Saved');
       Navigator.of(context).pop(true);
@@ -110,27 +113,12 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   }
 
   Future<void> _delete() async {
-    //if (!_formKey.currentState!.validate()) return;
-    // if (item == null) return;
-
-    setState(() => _isSaving = true);
-
-    // final timeStr = item!.time;
-    // final updatedItem = TransactionItem(
-    //   id: item!.id,
-    //   icon: icons[selectedCategory] ?? icons['Others']!,
-    //   title: _titleCtrl.text.trim(),
-    //   category: selectedCategory,
-    //   time: timeStr,
-    //   date: selectedDate,
-    //   amount: double.parse(_amountCtrl.text.trim()),
-    //   isExpense: _isExpense,
-    // );
+    setState(() => isSaving = true);
 
     await db.deleteTransaction(item!.id);
 
     if (mounted) {
-      setState(() => _isSaving = false);
+      setState(() => isSaving = false);
       widget.onSaved?.call();
       Appsnackbar.success_snackbar(context, 'Transaction Deleted');
       Navigator.of(context).pop(true);
@@ -194,6 +182,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                   child: ListView(
                     children: [
                       // Income / Expense toggle
+
                       Container(
                         decoration: BoxDecoration(
                           color: Colors.white,
@@ -203,13 +192,17 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                           children: [
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => setState(() => _isExpense = false),
+                                onTap: (!isBank)
+                                    ? () {
+                                        setState(() => isExpense = false);
+                                      }
+                                    : () {},
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 14),
                                   decoration: BoxDecoration(
-                                    color: !_isExpense
+                                    color: !isExpense
                                         ? primary
                                         : Colors.transparent,
                                     borderRadius: BorderRadius.circular(16),
@@ -219,7 +212,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     children: [
                                       Icon(
                                         Icons.trending_up,
-                                        color: !_isExpense
+                                        color: !isExpense
                                             ? Colors.white
                                             : Colors.black54,
                                         size: 20,
@@ -228,7 +221,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                       Text(
                                         'Income',
                                         style: TextStyle(
-                                          color: !_isExpense
+                                          color: !isExpense
                                               ? Colors.white
                                               : Colors.black54,
                                           fontWeight: FontWeight.w700,
@@ -241,13 +234,17 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                             ),
                             Expanded(
                               child: GestureDetector(
-                                onTap: () => setState(() => _isExpense = true),
+                                onTap: (!isBank)
+                                    ? () {
+                                        setState(() => isExpense = true);
+                                      }
+                                    : () {},
                                 child: AnimatedContainer(
                                   duration: const Duration(milliseconds: 200),
                                   padding:
                                       const EdgeInsets.symmetric(vertical: 14),
                                   decoration: BoxDecoration(
-                                    color: _isExpense
+                                    color: isExpense
                                         ? Colors.blue
                                         : Colors.transparent,
                                     borderRadius: BorderRadius.circular(16),
@@ -257,7 +254,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                     children: [
                                       Icon(
                                         Icons.trending_down,
-                                        color: _isExpense
+                                        color: isExpense
                                             ? Colors.white
                                             : Colors.black54,
                                         size: 20,
@@ -266,7 +263,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                       Text(
                                         'Expense',
                                         style: TextStyle(
-                                          color: _isExpense
+                                          color: isExpense
                                               ? Colors.white
                                               : Colors.black54,
                                           fontWeight: FontWeight.w700,
@@ -281,17 +278,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
-                      // Title field
+                      // Category field
                       _textField.buildLabel('Category'),
                       const SizedBox(height: 8),
                       _textField.buildFormField_1(
                         context: context,
                         icons: CategoryItem.icons,
+                        excludedIcon: {'All', 'Bank'},
                         ifSelected: (selected) {
                           setState(() => selectedCategory = selected);
                         },
                         selectedKey: selectedCategory,
                       ),
+                      //Title field
                       const SizedBox(height: 8),
                       _textField.buildLabel('Title'),
                       const SizedBox(height: 8),
@@ -307,39 +306,18 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       // Amount field
                       _textField.buildLabel('Amount (\$)'),
                       const SizedBox(height: 8),
-                      // _textField.buildTextField(
-                      //   controller: _amountCtrl,
-                      //   hint: '$selectedAmount',
-                      //   icon: Icons.attach_money,
-                      //   keyboardType:
-                      //       const TextInputType.numberWithOptions(decimal: true),
-                      //   inputFormatters: [
-                      //     FilteringTextInputFormatter.allow(
-                      //         RegExp(r'^\d+\.?\d{0,2}')),
-                      //   ],
-                      //   validator: (v) {
-                      //     if (v == null || v.trim().isEmpty) {
-                      //       return 'Please Enter Amount';
-                      //     }
-                      //     final parsed = double.tryParse(v.trim());
-                      //     if (parsed == null || parsed <= 0) {
-                      //       return 'Invalid Amount';
-                      //     }
-                      //     return null;
-                      //   },
-                      // ),
-
                       GestureDetector(
-                        onTap: () =>
-                            setState(() => _showNumPad = true), // ✅ mở numpad
+                        onTap: (!isBank)
+                            ? () {
+                                setState(() => _showNumPad = true);
+                              }
+                            : () {},
                         child: AbsorbPointer(
-                          // ✅ chặn bàn phím hệ thống
                           child: _textField.buildTextField(
                             controller: _amountCtrl,
                             hint: '0.00',
                             icon: Icons.attach_money,
-                            keyboardType:
-                                TextInputType.none, // ✅ tắt bàn phím hệ thống
+                            keyboardType: TextInputType.none,
                             inputFormatters: [
                               FilteringTextInputFormatter.allow(
                                   RegExp(r'^\d+\.?\d{0,2}')),
@@ -362,13 +340,17 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       _textField.buildLabel('Date'),
                       const SizedBox(height: 8),
                       GestureDetector(
-                        onTap: () => _pickdate.PickDate(
-                          context: context,
-                          selectedDate: selectedDate,
-                          ifPicked: (picked) {
-                            setState(() => selectedDate = picked);
-                          },
-                        ),
+                        onTap: (!isBank)
+                            ? () {
+                                _pickdate.PickDate(
+                                  context: context,
+                                  selectedDate: selectedDate,
+                                  ifPicked: (picked) {
+                                    setState(() => selectedDate = picked);
+                                  },
+                                );
+                              }
+                            : () {},
                         child: Container(
                           padding: const EdgeInsets.symmetric(
                               horizontal: 16, vertical: 16),
@@ -405,7 +387,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                             child: SizedBox(
                               height: 60,
                               child: ElevatedButton(
-                                onPressed: _isSaving
+                                onPressed: isSaving
                                     ? null
                                     : () {
                                         ShowDialog().showLogoutDialog(
@@ -427,7 +409,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: _isSaving
+                                child: isSaving
                                     ? const SizedBox(
                                         height: 24,
                                         width: 24,
@@ -452,7 +434,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                             child: SizedBox(
                               height: 60,
                               child: ElevatedButton(
-                                onPressed: _isSaving ? null : _save,
+                                onPressed: isSaving ? null : _save,
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: primary,
                                   foregroundColor: Colors.white,
@@ -461,7 +443,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                                   ),
                                   elevation: 0,
                                 ),
-                                child: _isSaving
+                                child: isSaving
                                     ? const SizedBox(
                                         height: 24,
                                         width: 24,

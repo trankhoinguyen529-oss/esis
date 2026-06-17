@@ -58,6 +58,7 @@ class Textfield {
   Widget buildFormField_1({
     required BuildContext context,
     required Map<String, IconData?> icons,
+    required Set<String> excludedIcon,
     required Function(String) ifSelected,
     required String selectedKey,
   }) {
@@ -70,7 +71,9 @@ class Textfield {
           ),
           builder: (_) => ListView(
             shrinkWrap: true,
-            children: icons.entries.map((entry) {
+            children: icons.entries
+                .where((entry) => !excludedIcon.contains(entry.key))
+                .map((entry) {
               return ListTile(
                 leading: Icon(entry.value, color: const Color(0xFF14C38E)),
                 title: Text(entry.key),
@@ -105,6 +108,7 @@ class Textfield {
   Widget buildFormField_M({
     required BuildContext context,
     required Map<String, IconData?> icons,
+    required Set<String> excludedIcon,
     required Function(Set<String>) ifSelected, // ✅ đổi sang Set
     required Set<String> selectedKeys, // ✅ đổi sang Set
   }) {
@@ -143,7 +147,9 @@ class Textfield {
                     ),
                   ),
                   const Divider(height: 1),
-                  ...icons.entries.map((entry) {
+                  ...icons.entries
+                      .where((entry) => !excludedIcon.contains(entry.key))
+                      .map((entry) {
                     final isSelected = tempSelected.contains(entry.key);
                     return ListTile(
                       leading:

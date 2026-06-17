@@ -1,3 +1,4 @@
+import 'package:a_management/management/bankdetailscreen.dart';
 import 'package:a_management/widget/icon_map.dart';
 import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
@@ -11,7 +12,9 @@ class ManagementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     const primary = Color(0xFF00C18A);
     const surface = Color(0xFFF3FFF8);
-    final entries = CategoryItem.icons.entries.toList();
+    final entries = CategoryItem.icons.entries
+        .where((e) => e.key != 'All' && e.key != 'Bank') // ✅ lọc trước
+        .toList();
 
     return Container(
       color: primary,
@@ -129,7 +132,14 @@ class ManagementScreen extends StatelessWidget {
                           context,
                           Icons.account_balance_rounded,
                           'Bank',
-                          () {},
+                          () async {
+                            final result = await Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => Bankdetail(),
+                              ),
+                            );
+                            if (result == true) onTransactionAdded?.call();
+                          },
                         ),
                       ),
                     ),
