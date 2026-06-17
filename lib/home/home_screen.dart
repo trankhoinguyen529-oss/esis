@@ -11,6 +11,8 @@ import '../services/database_service.dart';
 import '../services/bank_email_sync_service.dart';
 import '../profile/bank_email_sync_screen.dart';
 import 'dart:async';
+import 'dart:math';
+import 'package:a_management/data/data_transaction.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key, this.onTransactionAdded});
@@ -31,6 +33,7 @@ class _HomeState extends State<Home> {
   double _income = 0;
   double _expense = 0;
   bool _summaryLoading = true;
+  List<TransactionItem> _periodTransactions = [];
 
   @override
   void initState() {
@@ -76,10 +79,13 @@ class _HomeState extends State<Home> {
   Future<void> _loadSummary() async {
     setState(() => _summaryLoading = true);
     final summary = await DatabaseService().getSummaryByPeriod(_selectedPeriod);
+    final txns =
+        await DatabaseService().getTransactionsByPeriod(_selectedPeriod);
     if (mounted) {
       setState(() {
         _income = summary['income'] ?? 0;
         _expense = summary['expense'] ?? 0;
+        _periodTransactions = txns;
         _summaryLoading = false;
       });
     }
@@ -217,8 +223,8 @@ class _HomeState extends State<Home> {
       ),
       floatingActionButton: addButton
           ? SizedBox(
-              width: 84,
-              height: 84,
+              width: 60,
+              height: 60,
               child: FloatingActionButton(
                 onPressed: () async {
                   final result = await Navigator.of(context).push(
@@ -232,7 +238,7 @@ class _HomeState extends State<Home> {
                   }
                 },
                 shape: const CircleBorder(),
-                child: const Icon(Icons.add, size: 40),
+                child: const Icon(Icons.add, size: 32),
               ),
             )
           : null, // ✅ null = không hiện
@@ -284,7 +290,8 @@ class _HomeState extends State<Home> {
         const SizedBox(height: 18),
         Expanded(
           child: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+            headerSliverBuilder:
+                (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverToBoxAdapter(
                   child: Column(
@@ -394,7 +401,10 @@ class _HomeState extends State<Home> {
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(16),
                           ),
-                          child: const Text('Nội dung'), // thay bằng widget bạn muốn
+                          child: SwipeablePieCharts(
+                            transactions: _periodTransactions,
+                            isLoading: _summaryLoading,
+                          ),
                         ),
                       ),
                       const SizedBox(height: 18),
@@ -556,5 +566,493 @@ class _HomeHeaderDelegate extends SliverPersistentHeaderDelegate {
     return oldDelegate.selectedPeriod != selectedPeriod ||
         oldDelegate.primary != primary ||
         oldDelegate.surface != surface;
+  }
+}
+
+// ─── CUSTOM PIE CHART WIDGETS FOR CATEGORY EXPENSES ────────────────
+
+class CategoryPieData {
+  final String category;
+  final double amount;
+  final double percentage;
+  final Color color;
+
+  CategoryPieData({
+    required this.category,
+    required this.amount,
+    required this.percentage,
+    required this.color,
+  });
+}
+
+class SwipeablePieCharts extends StatefulWidget {
+  final List<TransactionItem> transactions;
+  final bool isLoading;
+
+  const SwipeablePieCharts({
+    super.key,
+    required this.transactions,
+    required this.isLoading,
+  });
+
+  @override
+  State<SwipeablePieCharts> createState() => _SwipeablePieChartsState();
+}
+
+class _SwipeablePieChartsState extends State<SwipeablePieCharts> {
+  final PageController _controller = PageController();
+  int _currentPage = 0;
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (widget.isLoading) {
+      return const SizedBox(
+        height: 175,
+        child: Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF00C18A)),
+          ),
+        ),
+      );
+    }
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        SizedBox(
+          height: 150,
+          child: PageView(
+            controller: _controller,
+            onPageChanged: (index) {
+              setState(() {
+                _currentPage = index;
+              });
+            },
+            children: [
+              CategoryPieChart(
+                transactions: widget.transactions,
+                isExpense: true,
+              ),
+              CategoryPieChart(
+                transactions: widget.transactions,
+                isExpense: false,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: List.generate(2, (index) {
+            final isSelected = _currentPage == index;
+            return AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              margin: const EdgeInsets.symmetric(horizontal: 4),
+              width: isSelected ? 12 : 6,
+              height: 6,
+              decoration: BoxDecoration(
+                color: isSelected ? const Color(0xFF00C18A) : Colors.black12,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            );
+          }),
+        ),
+      ],
+    );
+  }
+}
+
+class CategoryPieChart extends StatelessWidget {
+  final List<TransactionItem> transactions;
+  final bool isExpense;
+
+  const CategoryPieChart({
+    super.key,
+    required this.transactions,
+    required this.isExpense,
+  });
+
+  Color _getCategoryColor(String category) {
+    switch (category) {
+      case 'Food':
+        return const Color(0xFFE67E22); // Orange
+      case 'Transport':
+        return const Color(0xFF3498DB); // Blue
+      case 'Medicine':
+        return const Color(0xFFE74C3C); // Red
+      case 'Groceries':
+        return const Color(0xFF2ECC71); // Green
+      case 'Rent':
+        return const Color(0xFF9B59B6); // Purple
+      case 'Gifts':
+        return const Color(0xFFF1C40F); // Yellow/Gold
+      case 'Savings':
+        return const Color(0xFF1ABC9C); // Turquoise
+      case 'Entertainment':
+        return const Color(0xFFE84393); // Pink
+      case 'Salary':
+        return const Color(0xFF27AE60); // Dark Green
+      case 'Work':
+        return const Color(0xFF8D6E63); // Brown
+      case 'Gaming':
+        return const Color(0xFF3F51B5); // Indigo
+      case 'Others':
+        return const Color(0xFF7F8C8D); // Slate Grey
+      default:
+        // Use a fixed palette of 10 more colors for dynamic categories
+        final List<Color> dynamicColors = [
+          const Color(0xFF16A085), // Dark turquoise
+          const Color(0xFF2980B9), // Dark blue
+          const Color(0xFF8E44AD), // Dark purple
+          const Color(0xFFD35400), // Dark orange
+          const Color(0xFFC0392B), // Dark red
+          const Color(0xFFD6A2E8), // Light lavender
+          const Color(0xFF1B9CFC), // Clear blue
+          const Color(0xFFFD79A8), // Light pink
+          const Color(0xFF00CEC9), // Robin egg blue
+          const Color(0xFF6C5CE7), // Slate blue
+        ];
+        final int hash = category.hashCode;
+        final int index = hash.abs() % dynamicColors.length;
+        return dynamicColors[index];
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final filteredTransactions =
+        transactions.where((t) => t.isExpense == isExpense).toList();
+
+    if (filteredTransactions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.pie_chart_outline,
+                size: 48, color: Colors.black26),
+            const SizedBox(height: 8),
+            Text(
+              isExpense ? 'No expenses recorded' : 'No income recorded',
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.black45,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    // Group by category
+    final Map<String, double> categoryAmounts = {};
+    double totalAmount = 0;
+    for (final tx in filteredTransactions) {
+      categoryAmounts[tx.category] =
+          (categoryAmounts[tx.category] ?? 0) + tx.amount;
+      totalAmount += tx.amount;
+    }
+
+    final List<CategoryPieData> pieData = [];
+    categoryAmounts.forEach((cat, amt) {
+      pieData.add(CategoryPieData(
+        category: cat,
+        amount: amt,
+        percentage: totalAmount > 0 ? (amt / totalAmount) * 100 : 0,
+        color: _getCategoryColor(cat),
+      ));
+    });
+
+    // Sort by amount descending
+    pieData.sort((a, b) => b.amount.compareTo(a.amount));
+
+    return Row(
+      children: [
+        // Left side: Pie Chart (Enlarged size)
+        SizedBox(
+          width: 150,
+          height: 150,
+          child: PieChartWidget(
+            data: pieData,
+            title: isExpense ? 'Expense' : 'Income',
+            isExpense: isExpense,
+          ),
+        ),
+        const SizedBox(width: 20), // gap to shift list to the right
+        // Right side: Scrollable Category List
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.only(left: 4.0, right: 2.0),
+            child: ListView.builder(
+              physics: const BouncingScrollPhysics(),
+              itemCount: pieData.length,
+              itemBuilder: (context, index) {
+                final item = pieData[index];
+                final sign = isExpense ? '-' : '+';
+                return Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 4.0),
+                  child: Row(
+                    children: [
+                      // Color indicator
+                      Container(
+                        width: 10,
+                        height: 10,
+                        decoration: BoxDecoration(
+                          color: item.color,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Category Name
+                      Expanded(
+                        child: Text(
+                          item.category,
+                          style: const TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.black87,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      // Dollar Amount
+                      Text(
+                        '$sign\$${item.amount.toStringAsFixed(2)}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                          color: isExpense
+                              ? Colors.red[400]
+                              : const Color(0xFF00C18A),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class PieChartWidget extends StatefulWidget {
+  final List<CategoryPieData> data;
+  final String title;
+  final bool isExpense;
+
+  const PieChartWidget({
+    super.key,
+    required this.data,
+    required this.title,
+    required this.isExpense,
+  });
+
+  @override
+  State<PieChartWidget> createState() => _PieChartWidgetState();
+}
+
+class _PieChartWidgetState extends State<PieChartWidget> {
+  int? _selectedIndex;
+
+  void _handleTouch(Offset localPosition, Size size) {
+    if (widget.data.isEmpty) return;
+
+    final center = Offset(size.width / 2, size.height / 2);
+    final dx = localPosition.dx - center.dx;
+    final dy = localPosition.dy - center.dy;
+    final distance = sqrt(dx * dx + dy * dy);
+
+    // Leaving a 12px margin on the radius
+    final radius = (size.width / 2) - 12;
+
+    // Check if touch is within the pie chart area (donut boundary)
+    if (distance > radius + 10 || distance < radius * 0.2) {
+      if (_selectedIndex != null) {
+        setState(() {
+          _selectedIndex = null;
+        });
+      }
+      return;
+    }
+
+    double angle = atan2(dy, dx);
+    if (angle < 0) {
+      angle += 2 * pi;
+    }
+
+    // Adjust for startAngle = -pi/2
+    double adjustedAngle = angle - (-pi / 2);
+    if (adjustedAngle < 0) {
+      adjustedAngle += 2 * pi;
+    }
+    adjustedAngle = adjustedAngle % (2 * pi);
+
+    double currentAngle = 0;
+    int? foundIndex;
+    for (int i = 0; i < widget.data.length; i++) {
+      final sweepAngle = (widget.data[i].percentage / 100) * 2 * pi;
+      if (adjustedAngle >= currentAngle &&
+          adjustedAngle < currentAngle + sweepAngle) {
+        foundIndex = i;
+        break;
+      }
+      currentAngle += sweepAngle;
+    }
+
+    if (foundIndex != _selectedIndex) {
+      setState(() {
+        _selectedIndex = foundIndex;
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = Size(constraints.maxWidth, constraints.maxHeight);
+        final selectedItem =
+            _selectedIndex != null ? widget.data[_selectedIndex!] : null;
+
+        // Dynamic center hole diameter matching the 12px margin and 0.60 ratio
+        final innerDiameter = (size.width - 24) * 0.60;
+
+        return GestureDetector(
+          onPanDown: (details) => _handleTouch(details.localPosition, size),
+          onPanUpdate: (details) => _handleTouch(details.localPosition, size),
+          onPanEnd: (_) => setState(() => _selectedIndex = null),
+          onPanCancel: () => setState(() => _selectedIndex = null),
+          onTapDown: (details) => _handleTouch(details.localPosition, size),
+          onTapUp: (_) => setState(() => _selectedIndex = null),
+          behavior: HitTestBehavior.opaque,
+          child: Stack(
+            alignment: Alignment.center,
+            children: [
+              CustomPaint(
+                size: size,
+                painter: PieChartPainter(
+                  data: widget.data,
+                  selectedIndex: _selectedIndex,
+                ),
+              ),
+              // Center hole content
+              IgnorePointer(
+                child: Container(
+                  width: innerDiameter,
+                  height: innerDiameter,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            selectedItem != null
+                                ? selectedItem.category
+                                : widget.title,
+                            textAlign: TextAlign.center,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 10,
+                              color: Colors.black54,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          if (selectedItem != null) ...[
+                            const SizedBox(height: 2),
+                            FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                '${selectedItem.percentage.toStringAsFixed(1)}%',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: selectedItem.color,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+}
+
+class PieChartPainter extends CustomPainter {
+  final List<CategoryPieData> data;
+  final int? selectedIndex;
+
+  PieChartPainter({required this.data, this.selectedIndex});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    // Leave 12px margin on the radius to prevent clipping on enlargement (+6) and offset (+4)
+    final double radius = (size.width / 2) - 12;
+    final Offset center = Offset(size.width / 2, size.height / 2);
+
+    double startAngle = -pi / 2;
+
+    for (int i = 0; i < data.length; i++) {
+      final item = data[i];
+      final sweepAngle = (item.percentage / 100) * 2 * pi;
+
+      final paint = Paint()
+        ..color = item.color
+        ..style = PaintingStyle.fill;
+
+      final isSelected = selectedIndex == i;
+      final double sliceRadius = isSelected ? radius + 6 : radius;
+
+      if (isSelected) {
+        final double middleAngle = startAngle + sweepAngle / 2;
+        final Offset offset =
+            Offset(cos(middleAngle) * 4, sin(middleAngle) * 4);
+        canvas.save();
+        canvas.translate(offset.dx, offset.dy);
+      }
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: sliceRadius),
+        startAngle,
+        sweepAngle,
+        true,
+        paint,
+      );
+
+      if (isSelected) {
+        canvas.restore();
+      }
+
+      startAngle += sweepAngle;
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant PieChartPainter oldDelegate) {
+    return oldDelegate.selectedIndex != selectedIndex ||
+        oldDelegate.data != data;
   }
 }
