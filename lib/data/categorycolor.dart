@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 
 /// `CategoryColor` quản lý bảng màu cố định cho từng danh mục giao dịch.
 class CategoryColor {
+  // Cache lưu các màu load từ database
+  static final Map<String, Color> _dbColors = {};
+
   static const Map<String, Color> presetColors = {
     'Food': Color(0xFFE67E22), // Cam
     'Transport': Color(0xFF3498DB), // Xanh dương
@@ -30,8 +33,40 @@ class CategoryColor {
     Color(0xFF6C5CE7),
   ];
 
+  /// Cập nhật cache từ database
+  static void updateCache(Map<String, String> categoryColorsHex) {
+    _dbColors.clear();
+    categoryColorsHex.forEach((category, hexStr) {
+      final color = _parseColor(hexStr);
+      if (color != null) {
+        _dbColors[category] = color;
+      }
+    });
+  }
+
+  /// Parse mã màu từ String thành Color
+  static Color? _parseColor(String hexStr) {
+    try {
+      String cleanedHex = hexStr.trim().replaceAll('#', '');
+      if (cleanedHex.startsWith('0x') || cleanedHex.startsWith('0X')) {
+        cleanedHex = cleanedHex.substring(2);
+      }
+      if (cleanedHex.length == 6) {
+        cleanedHex = 'FF$cleanedHex'; // Thêm alpha channel mặc định là FF
+      }
+      final intVal = int.parse(cleanedHex, radix: 16);
+      return Color(intVal);
+    } catch (e) {
+      debugPrint('Error parsing color $hexStr: $e');
+      return null;
+    }
+  }
+
   /// Trả về màu tương ứng với danh mục. Nếu danh mục lạ, tự tạo màu dựa trên mã băm.
   static Color getColor(String category) {
+    if (_dbColors.containsKey(category)) {
+      return _dbColors[category]!;
+    }
     if (presetColors.containsKey(category)) {
       return presetColors[category]!;
     }
