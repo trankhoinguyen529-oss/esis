@@ -1,8 +1,7 @@
-import 'package:a_management/data/categorycolor.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
 import '../data/piechartdata.dart';
-import '../services/database_service.dart';
+import '../data/categorycolor.dart';
 
 /// `BubbleClipper` tạo hình dạng bong bóng đối thoại có mũi tên chỉ sang trái (hướng về biểu đồ).
 class BubbleClipper extends CustomClipper<Path> {
@@ -20,11 +19,9 @@ class BubbleClipper extends CustomClipper<Path> {
     path.lineTo(size.width - radius, 0);
     path.quadraticBezierTo(size.width, 0, size.width, radius);
     path.lineTo(size.width, size.height - radius);
-    path.quadraticBezierTo(
-        size.width, size.height, size.width - radius, size.height);
+    path.quadraticBezierTo(size.width, size.height, size.width - radius, size.height);
     path.lineTo(arrowWidth + radius, size.height);
-    path.quadraticBezierTo(
-        arrowWidth, size.height, arrowWidth, size.height - radius);
+    path.quadraticBezierTo(arrowWidth, size.height, arrowWidth, size.height - radius);
 
     // Mũi tên chỉ sang trái
     path.lineTo(arrowWidth, arrowBottom);
@@ -147,8 +144,7 @@ class _CustomPieChartState extends State<CustomPieChart> {
 
         // Tính toạ độ Y của bong bóng đối thoại
         final double radius = (size.width / 2) - 12;
-        final double yOffset =
-            (size.height / 2) + sin(middleAngle) * (radius + 6);
+        final double yOffset = (size.height / 2) + sin(middleAngle) * (radius + 6);
         // Giới hạn Y để không vượt quá chiều cao biểu đồ
         final double clampedY = yOffset.clamp(20.0, size.height - 20.0);
 
@@ -189,9 +185,7 @@ class _CustomPieChartState extends State<CustomPieChart> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                            selectedItem != null
-                                ? selectedItem.name
-                                : widget.title,
+                            selectedItem != null ? selectedItem.name : widget.title,
                             textAlign: TextAlign.center,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -209,8 +203,7 @@ class _CustomPieChartState extends State<CustomPieChart> {
                                 '\$${selectedItem.value.toStringAsFixed(2)}',
                                 style: TextStyle(
                                   fontSize: 11,
-                                  color:
-                                      CategoryColor.getColor(selectedItem.name),
+                                  color: CategoryColor.getColor(selectedItem.name),
                                   fontWeight: FontWeight.w800,
                                 ),
                               ),
@@ -226,8 +219,7 @@ class _CustomPieChartState extends State<CustomPieChart> {
               if (_selectedIndex != null)
                 Positioned(
                   left: size.width - 12,
-                  top: clampedY -
-                      14, // 14 là nửa chiều cao trung bình của bong bóng
+                  top: clampedY - 14, // 14 là nửa chiều cao trung bình của bong bóng
                   child: IgnorePointer(
                     child: ClipPath(
                       clipper: BubbleClipper(),
@@ -289,8 +281,7 @@ class CustomPieChartPainter extends CustomPainter {
 
       if (isSelected) {
         final double middleAngle = startAngle + sweepAngle / 2;
-        final Offset offset =
-            Offset(cos(middleAngle) * 4, sin(middleAngle) * 4);
+        final Offset offset = Offset(cos(middleAngle) * 4, sin(middleAngle) * 4);
         canvas.save();
         canvas.translate(offset.dx, offset.dy);
       }

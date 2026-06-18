@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../services/database_service.dart';
+import '../data/categorycolor.dart';
 
 /// `ScrollList` nhận dữ liệu là một `Map<String, double>` đại diện cho tên danh mục và giá trị của nó.
 /// Khi build, nó vẽ ra danh sách các danh mục có thể cuộn được, theo thứ tự: hình tròn màu, tên danh mục, và giá trị số tiền.
@@ -26,7 +26,7 @@ class ScrollList extends StatelessWidget {
         final entry = sortedEntries[index];
         final name = entry.key;
         final value = entry.value;
-        final color = DatabaseService.getCategoryColor(name);
+        final color = CategoryColor.getColor(name);
         final sign = isExpense ? '-' : '+';
 
         return Padding(

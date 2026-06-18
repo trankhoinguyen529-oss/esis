@@ -107,33 +107,6 @@ class ManagementScreen extends StatelessWidget {
                         );
                       },
                     ),
-                    const SizedBox(height: 12),
-                    SizedBox(
-                      width: (MediaQuery.of(context).size.width -
-                              18 * 2 -
-                              12 * 2) /
-                          3, // ✅ cùng size với GridView tile
-                      height: (MediaQuery.of(context).size.width -
-                              18 * 2 -
-                              12 * 2) /
-                          3,
-                      child: GestureDetector(
-                        onTap: () {},
-                        child: CategoryTile().build(
-                          context,
-                          Icons.add,
-                          'Add',
-                          () async {
-                            // final result = await Navigator.of(context).push(
-                            //   MaterialPageRoute(
-                            //     builder: (_) => Bankdetail(),
-                            //   ),
-                            // );
-                            // if (result == true) onTransactionAdded?.call();
-                          },
-                        ),
-                      ),
-                    ),
                     const SizedBox(height: 18),
                     const Text(
                       'More',

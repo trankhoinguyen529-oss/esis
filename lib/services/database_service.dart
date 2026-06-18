@@ -1,9 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../data/data_transaction.dart';
-import '../data/category_model.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -11,10 +9,6 @@ class DatabaseService {
   DatabaseService._internal();
 
   Database? _db;
-
-  // Cache categories
-  static List<CategoryModel> _cachedCategories = [];
-  static List<CategoryModel> get cachedCategories => _cachedCategories;
 
   // ─── Lấy UID của người dùng hiện tại ───────────────────────
   String get _currentUserId {
@@ -26,7 +20,6 @@ class DatabaseService {
   Future<Database> get database async {
     if (_db != null) return _db!;
     _db = await _initDb();
-    await loadCategoriesCache();
     return _db!;
   }
 
@@ -35,13 +28,11 @@ class DatabaseService {
     final path = join(dbPath, 'transactions.db');
     return await openDatabase(
       path,
-      version: 5,
+      version: 4,
       onCreate: (db, version) async {
-        await _createTransactionTable(db);
+        await _createTable(db);
         await _createSyncedEmailsTable(db);
         await _createAppSettingsTable(db);
-        await _createCategoryTable(db);
-        await _populateDefaultCategories(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -57,15 +48,11 @@ class DatabaseService {
             "ALTER TABLE transactions ADD COLUMN is_bank INTEGER NOT NULL DEFAULT 0",
           );
         }
-        if (oldVersion < 5) {
-          await _createCategoryTable(db);
-          await _populateDefaultCategories(db);
-        }
       },
     );
   }
 
-  Future<void> _createTransactionTable(Database db) async {
+  Future<void> _createTable(Database db) async {
     await db.execute('''
       CREATE TABLE transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -80,135 +67,6 @@ class DatabaseService {
         time TEXT NOT NULL
       )
     ''');
-  }
-
-  Future<void> _createCategoryTable(Database db) async {
-    await db.execute('''
-      CREATE TABLE categories (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        name TEXT UNIQUE NOT NULL,
-        icon_code INTEGER NOT NULL,
-        color_code TEXT NOT NULL
-      )
-    ''');
-  }
-
-  Future<void> _populateDefaultCategories(Database db) async {
-    final defaultCategories = [
-      {'name': 'Food', 'icon_code': Icons.restaurant.codePoint, 'color_code': 'FFE67E22'},
-      {'name': 'Transport', 'icon_code': Icons.directions_bus.codePoint, 'color_code': 'FF3498DB'},
-      {'name': 'Medicine', 'icon_code': Icons.medical_services.codePoint, 'color_code': 'FFE74C3C'},
-      {'name': 'Groceries', 'icon_code': Icons.local_grocery_store.codePoint, 'color_code': 'FF2ECC71'},
-      {'name': 'Rent', 'icon_code': Icons.home.codePoint, 'color_code': 'FF9B59B6'},
-      {'name': 'Gifts', 'icon_code': Icons.card_giftcard.codePoint, 'color_code': 'FFF1C40F'},
-      {'name': 'Savings', 'icon_code': Icons.savings.codePoint, 'color_code': 'FF1ABC9C'},
-      {'name': 'Entertainment', 'icon_code': Icons.movie.codePoint, 'color_code': 'FFE84393'},
-      {'name': 'Salary', 'icon_code': Icons.wallet.codePoint, 'color_code': 'FF27AE60'},
-      {'name': 'Work', 'icon_code': Icons.work.codePoint, 'color_code': 'FF8D6E63'},
-      {'name': 'Gaming', 'icon_code': Icons.sports_esports.codePoint, 'color_code': 'FF3F51B5'},
-      {'name': 'Others', 'icon_code': Icons.more_horiz.codePoint, 'color_code': 'FF7F8C8D'},
-      {'name': 'Bank', 'icon_code': Icons.account_balance_rounded.codePoint, 'color_code': 'FF3498DB'},
-    ];
-
-    for (final cat in defaultCategories) {
-      await db.insert(
-        'categories',
-        cat,
-        conflictAlgorithm: ConflictAlgorithm.ignore,
-      );
-    }
-  }
-
-  Future<void> loadCategoriesCache() async {
-    final db = await database;
-    final maps = await db.query('categories');
-    _cachedCategories = maps.map((m) => CategoryModel.fromMap(m)).toList();
-    if (_cachedCategories.isEmpty) {
-      await _populateDefaultCategories(db);
-      final maps2 = await db.query('categories');
-      _cachedCategories = maps2.map((m) => CategoryModel.fromMap(m)).toList();
-    }
-  }
-
-  static Color getCategoryColor(String name) {
-    final cat = _cachedCategories.firstWhere(
-      (c) => c.name.toLowerCase() == name.toLowerCase(),
-      orElse: () => CategoryModel(
-        id: -1,
-        name: name,
-        iconCode: Icons.more_horiz.codePoint,
-        colorCode: 'FF7F8C8D',
-      ),
-    );
-    return cat.color;
-  }
-
-  static IconData getCategoryIcon(String name) {
-    final cat = _cachedCategories.firstWhere(
-      (c) => c.name.toLowerCase() == name.toLowerCase(),
-      orElse: () => CategoryModel(
-        id: -1,
-        name: name,
-        iconCode: Icons.more_horiz.codePoint,
-        colorCode: 'FF7F8C8D',
-      ),
-    );
-    return cat.icon;
-  }
-
-  static Map<String, IconData> getCategoryIconMap({bool includeAll = false, bool includeBank = false}) {
-    final map = <String, IconData>{};
-    if (includeAll) {
-      map['All'] = Icons.menu;
-    }
-    for (final cat in _cachedCategories) {
-      if (cat.name == 'Bank' && !includeBank) continue;
-      map[cat.name] = cat.icon;
-    }
-    if (includeBank && !map.containsKey('Bank')) {
-      map['Bank'] = Icons.account_balance_rounded;
-    }
-    return map;
-  }
-
-  Future<int> insertCategory(CategoryModel category) async {
-    final db = await database;
-    final id = await db.insert(
-      'categories',
-      category.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
-    await loadCategoriesCache();
-    return id;
-  }
-
-  Future<int> updateCategory(CategoryModel category) async {
-    final db = await database;
-    final count = await db.update(
-      'categories',
-      category.toMap(),
-      where: 'id = ?',
-      whereArgs: [category.id],
-    );
-    await loadCategoriesCache();
-    return count;
-  }
-
-  Future<int> deleteCategory(int id) async {
-    final db = await database;
-    final count = await db.delete(
-      'categories',
-      where: 'id = ?',
-      whereArgs: [id],
-    );
-    await loadCategoriesCache();
-    return count;
-  }
-
-  Future<List<CategoryModel>> getAllCategories() async {
-    final db = await database;
-    final maps = await db.query('categories');
-    return maps.map((m) => CategoryModel.fromMap(m)).toList();
   }
 
   Future<void> _createSyncedEmailsTable(Database db) async {
