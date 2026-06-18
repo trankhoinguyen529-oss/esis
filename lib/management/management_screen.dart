@@ -1,6 +1,6 @@
-import 'package:a_management/management/bank_detail_screen.dart';
+import 'package:a_management/management/bankdetailscreen.dart';
 import 'package:a_management/widget/icon_map.dart';
-import 'package:a_management/management/category_detail_screen.dart';
+import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:a_management/widget/widget.dart';
 

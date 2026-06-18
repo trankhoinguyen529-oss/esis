@@ -1,5 +1,5 @@
 import 'package:a_management/data/data_transaction.dart';
-import 'package:a_management/widget/app_snackbar.dart';
+import 'package:a_management/widget/appsnackbar.dart';
 import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -381,22 +381,19 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                           child: Row(
                             children: [
                               Icon(Icons.calendar_today,
-                                  color: isBank ? Colors.black38 : primary,
-                                  size: 22),
+                                  color: isBank ? Colors.black38 : primary, size: 22),
                               const SizedBox(width: 12),
                               Text(
                                 dateStr,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color:
-                                      isBank ? Colors.black54 : Colors.black87,
+                                  color: isBank ? Colors.black54 : Colors.black87,
                                 ),
                               ),
                               const Spacer(),
                               Icon(Icons.chevron_right,
-                                  color:
-                                      isBank ? Colors.black12 : Colors.black38),
+                                  color: isBank ? Colors.black12 : Colors.black38),
                             ],
                           ),
                         ),
