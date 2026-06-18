@@ -1,7 +1,7 @@
-import 'package:a_management/data/categorycolor.dart';
+import 'package:a_management/data/category_color.dart';
 import 'package:flutter/material.dart';
 import 'dart:math';
-import '../data/piechartdata.dart';
+import '../data/pie_chart_data.dart';
 import '../services/database_service.dart';
 
 /// `BubbleClipper` tạo hình dạng bong bóng đối thoại có mũi tên chỉ sang trái (hướng về biểu đồ).
