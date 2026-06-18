@@ -3,7 +3,44 @@ import 'package:a_management/services/database_service.dart';
 import 'package:flutter/material.dart';
 
 class Displaytransaction {
-  //int transactionId = 0;
+  /// Trả về Widget hiển thị danh sách giao dịch đồng bộ từ danh sách có sẵn.
+  Widget displayTransactionSync({
+    required List<TransactionItem> transactions,
+    required Function(int) ontap,
+    EdgeInsetsGeometry? padding,
+    ScrollPhysics? physics,
+    bool shrinkWrap = false,
+  }) {
+    if (transactions.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: const [
+            Icon(Icons.receipt_long, size: 64, color: Color(0xFFB0C4BE)),
+            SizedBox(height: 12),
+            Text(
+              'No Transaction',
+              style: TextStyle(
+                fontSize: 16,
+                color: Color(0xFF8FA89C),
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    return ListView.builder(
+      padding: padding,
+      physics: physics,
+      shrinkWrap: shrinkWrap,
+      itemCount: transactions.length,
+      itemBuilder: (context, index) {
+        final item = transactions[index];
+        return _TransactionItemWidget(item: item, ontap: () => ontap(item.id!));
+      },
+    );
+  }
 
   /// Trả về Widget FutureBuilder hiển thị danh sách giao dịch theo kỳ.
   /// period: 0=Daily, 1=Weekly, 2=Monthly, -1=All
@@ -21,9 +58,12 @@ class Displaytransaction {
     EdgeInsetsGeometry? padding,
     ScrollPhysics? physics,
     bool shrinkWrap = false,
+    Future<List<TransactionItem>>? customFuture,
   }) {
     final Future<List<TransactionItem>> future;
-    if (period == -1) {
+    if (customFuture != null) {
+      future = customFuture;
+    } else if (period == -1) {
       future = DatabaseService().getTransactionsByFilter(
           type: type,
           categories: categories,
@@ -33,13 +73,15 @@ class Displaytransaction {
           dateFrom: dateFrom,
           dateTo: dateTo,
           bank: bank);
-    } else
+    } else {
       future = DatabaseService().getTransactionsByPeriod(period);
+    }
 
     return FutureBuilder<List<TransactionItem>>(
       future: future,
       builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
+        if (snapshot.connectionState == ConnectionState.waiting &&
+            !snapshot.hasData) {
           return const Center(child: CircularProgressIndicator());
         }
         if (snapshot.hasError) {
