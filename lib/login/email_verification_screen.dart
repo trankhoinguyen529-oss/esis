@@ -1,5 +1,5 @@
 import 'dart:async';
-import 'package:a_management/widget/appsnackbar.dart';
+import 'package:a_management/widget/app_snackbar.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
