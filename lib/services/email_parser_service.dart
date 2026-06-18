@@ -242,7 +242,4 @@ class EmailParserService {
     }
     return result;
   }
-
-  /// Map description to app category keys:
-  /// 'Food', 'Transport', 'Medicine', 'Groceries', 'Rent', 'Gifts', 'Savings', 'Entertainment', 'Salary', 'Work', 'Gaming', 'Others'
 }

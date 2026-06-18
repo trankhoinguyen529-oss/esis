@@ -28,7 +28,7 @@ class DatabaseService {
     final path = join(dbPath, 'transactions.db');
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: (db, version) async {
         await _createTable(db);
         await _createSyncedEmailsTable(db);
@@ -41,12 +41,36 @@ class DatabaseService {
           );
         }
         if (oldVersion < 3) {
-          await _createSyncedEmailsTable(db);
-          await _createAppSettingsTable(db);
           // ✅ thêm cột is_bank cho DB cũ chưa có
           await db.execute(
             "ALTER TABLE transactions ADD COLUMN is_bank INTEGER NOT NULL DEFAULT 0",
           );
+        }
+        if (oldVersion < 5) {
+          if (oldVersion >= 3) {
+            // Migrate synced_emails table
+            await db.execute("ALTER TABLE synced_emails RENAME TO synced_emails_old");
+            await _createSyncedEmailsTable(db);
+            await db.execute('''
+              INSERT OR IGNORE INTO synced_emails (message_id, user_id, synced_at)
+              SELECT message_id, user_id, synced_at FROM synced_emails_old
+            ''');
+            await db.execute("DROP TABLE synced_emails_old");
+
+            // Migrate app_settings table
+            await db.execute("ALTER TABLE app_settings RENAME TO app_settings_old");
+            await _createAppSettingsTable(db);
+            final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
+            await db.execute('''
+              INSERT OR IGNORE INTO app_settings (key, user_id, value)
+              SELECT key, '$currentUid', value FROM app_settings_old
+            ''');
+            await db.execute("DROP TABLE app_settings_old");
+          } else {
+            // Fresh tables for users coming from version < 3
+            await _createSyncedEmailsTable(db);
+            await _createAppSettingsTable(db);
+          }
         }
       },
     );
@@ -72,9 +96,10 @@ class DatabaseService {
   Future<void> _createSyncedEmailsTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS synced_emails (
-        message_id TEXT PRIMARY KEY,
+        message_id TEXT NOT NULL,
         user_id TEXT NOT NULL,
-        synced_at TEXT NOT NULL
+        synced_at TEXT NOT NULL,
+        PRIMARY KEY (message_id, user_id)
       )
     ''');
   }
@@ -82,8 +107,10 @@ class DatabaseService {
   Future<void> _createAppSettingsTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS app_settings (
-        key TEXT PRIMARY KEY,
-        value TEXT NOT NULL
+        key TEXT NOT NULL,
+        user_id TEXT NOT NULL,
+        value TEXT NOT NULL,
+        PRIMARY KEY (key, user_id)
       )
     ''');
   }
@@ -355,8 +382,8 @@ class DatabaseService {
     final db = await database;
     final maps = await db.query(
       'app_settings',
-      where: 'key = ?',
-      whereArgs: [key],
+      where: 'key = ? AND user_id = ?',
+      whereArgs: [key, _currentUserId],
       limit: 1,
     );
     if (maps.isEmpty) return null;
@@ -369,6 +396,7 @@ class DatabaseService {
       'app_settings',
       {
         'key': key,
+        'user_id': _currentUserId,
         'value': value,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -379,8 +407,8 @@ class DatabaseService {
     final db = await database;
     await db.delete(
       'app_settings',
-      where: 'key = ?',
-      whereArgs: [key],
+      where: 'key = ? AND user_id = ?',
+      whereArgs: [key, _currentUserId],
     );
   }
 }
