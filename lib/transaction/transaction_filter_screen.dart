@@ -176,7 +176,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       const SizedBox(height: 8),
                       _textfield.buildFormField_M(
                         context: context,
-                        icons: CategoryItem.icons,
+                        icons: CategoryItem1.icons,
                         excludedIcon: {'Bank'},
                         ifSelected: (selected) {
                           setState(() => widget.selectedCategories = selected);

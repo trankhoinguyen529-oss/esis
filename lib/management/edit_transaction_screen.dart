@@ -91,8 +91,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     final timeStr = item!.time;
     final updatedItem = TransactionItem(
       id: item!.id,
-      icon:
-          CategoryItem.icons[selectedCategory] ?? CategoryItem.icons['Others']!,
+      icon: CategoryItem1.icons[selectedCategory] ??
+          CategoryItem1.icons['Others']!,
       title: _titleCtrl.text.trim(),
       category: selectedCategory,
       time: timeStr,
@@ -302,7 +302,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       const SizedBox(height: 8),
                       _textField.buildFormField_1(
                         context: context,
-                        icons: CategoryItem.icons,
+                        icons: CategoryItem1.icons,
                         excludedIcon: {'All', 'Bank'},
                         ifSelected: (selected) {
                           setState(() => selectedCategory = selected);
@@ -381,19 +381,22 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                           child: Row(
                             children: [
                               Icon(Icons.calendar_today,
-                                  color: isBank ? Colors.black38 : primary, size: 22),
+                                  color: isBank ? Colors.black38 : primary,
+                                  size: 22),
                               const SizedBox(width: 12),
                               Text(
                                 dateStr,
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w600,
-                                  color: isBank ? Colors.black54 : Colors.black87,
+                                  color:
+                                      isBank ? Colors.black54 : Colors.black87,
                                 ),
                               ),
                               const Spacer(),
                               Icon(Icons.chevron_right,
-                                  color: isBank ? Colors.black12 : Colors.black38),
+                                  color:
+                                      isBank ? Colors.black12 : Colors.black38),
                             ],
                           ),
                         ),

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CategoryItem {
+class CategoryItem1 {
   static const Map<String, IconData> icons = {
     'Food': Icons.restaurant,
     'Transport': Icons.directions_bus,

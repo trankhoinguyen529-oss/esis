@@ -12,7 +12,7 @@ class ManagementScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     const primary = Color(0xFF00C18A);
     const surface = Color(0xFFF3FFF8);
-    final entries = CategoryItem.icons.entries
+    final entries = CategoryItem1.icons.entries
         .where((e) => e.key != 'All' && e.key != 'Bank') // ✅ lọc trước
         .toList();
 

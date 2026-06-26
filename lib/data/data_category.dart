@@ -1,8 +1,11 @@
+import 'package:a_management/services/database_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:sqflite/sqflite.dart';
 
 class CategoryItem {
   final int? id;
-  final int userId;
+  final String userId;
   final IconData icon;
   final String title;
 
@@ -17,7 +20,7 @@ class CategoryItem {
   factory CategoryItem.fromMap(Map<String, dynamic> map) {
     return CategoryItem(
       id: map['id'] as int?,
-      userId: 0,
+      userId: DatabaseService().currentUserId,
       icon: IconData(map['icon_code'] as int, fontFamily: 'MaterialIcons'),
       title: map['title'] as String,
     );

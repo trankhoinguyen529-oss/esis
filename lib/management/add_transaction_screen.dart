@@ -78,7 +78,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
     final item = TransactionItem(
-      icon: CategoryItem.icons[selectedCategory]!,
+      icon: CategoryItem1.icons[selectedCategory]!,
       title: _titleCtrl.text.trim(),
       category: selectedCategory,
       time: timeStr,
@@ -153,7 +153,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             color: surface,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(CategoryItem.icons[widget.category],
+                          child: Icon(CategoryItem1.icons[widget.category],
                               color: primary, size: 36),
                         ),
                         const SizedBox(height: 10),
@@ -274,7 +274,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       const SizedBox(height: 8),
                       textfield.buildFormField_1(
                         context: context,
-                        icons: CategoryItem.icons,
+                        icons: CategoryItem1.icons,
                         excludedIcon: {'All', 'Bank'},
                         ifSelected: (selected) {
                           setState(() => selectedCategory = selected);

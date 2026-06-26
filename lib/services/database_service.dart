@@ -1,3 +1,5 @@
+import 'package:a_management/data/data_category.dart';
+import 'package:a_management/widget/icon_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -11,7 +13,7 @@ class DatabaseService {
   Database? _db;
 
   // ─── Lấy UID của người dùng hiện tại ───────────────────────
-  String get _currentUserId {
+  String get currentUserId {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) throw StateError('No user is currently logged in.');
     return uid;
@@ -30,9 +32,10 @@ class DatabaseService {
       path,
       version: 5,
       onCreate: (db, version) async {
-        await _createTable(db);
+        await _createTransactionTable(db);
         await _createSyncedEmailsTable(db);
         await _createAppSettingsTable(db);
+        await _createCategoryTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -49,7 +52,8 @@ class DatabaseService {
         if (oldVersion < 5) {
           if (oldVersion >= 3) {
             // Migrate synced_emails table
-            await db.execute("ALTER TABLE synced_emails RENAME TO synced_emails_old");
+            await db.execute(
+                "ALTER TABLE synced_emails RENAME TO synced_emails_old");
             await _createSyncedEmailsTable(db);
             await db.execute('''
               INSERT OR IGNORE INTO synced_emails (message_id, user_id, synced_at)
@@ -58,7 +62,8 @@ class DatabaseService {
             await db.execute("DROP TABLE synced_emails_old");
 
             // Migrate app_settings table
-            await db.execute("ALTER TABLE app_settings RENAME TO app_settings_old");
+            await db
+                .execute("ALTER TABLE app_settings RENAME TO app_settings_old");
             await _createAppSettingsTable(db);
             final currentUid = FirebaseAuth.instance.currentUser?.uid ?? '';
             await db.execute('''
@@ -76,7 +81,8 @@ class DatabaseService {
     );
   }
 
-  Future<void> _createTable(Database db) async {
+  //tao db transaction
+  Future<void> _createTransactionTable(Database db) async {
     await db.execute('''
       CREATE TABLE transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -93,6 +99,19 @@ class DatabaseService {
     ''');
   }
 
+  //tao db category
+  Future<void> _createCategoryTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE category (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        title TEXT NOT NULL,
+        icon_code INTEGER NOT NULL,
+      )
+    ''');
+  }
+
+  //tao db sync email
   Future<void> _createSyncedEmailsTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS synced_emails (
@@ -104,6 +123,7 @@ class DatabaseService {
     ''');
   }
 
+  //tao db setting
   Future<void> _createAppSettingsTable(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS app_settings (
@@ -115,13 +135,13 @@ class DatabaseService {
     ''');
   }
 
-  // ─── CRUD ────────────────────────────────────────────────────
+  // ─── Transaction ────────────────────────────────────────────────────
 
   /// Thêm giao dịch mới vào DB (tự gắn user_id hiện tại)
   Future<int> insertTransaction(TransactionItem item) async {
     final db = await database;
     final map = item.toMap();
-    map['user_id'] = _currentUserId;
+    map['user_id'] = currentUserId;
     final id = await db.insert('transactions', map);
     // In lại toàn bộ bảng sau mỗi lần thêm để debug
     await printAllTransactions();
@@ -149,12 +169,12 @@ class DatabaseService {
     }
     final db = await database;
     final map = item.toMap();
-    map['user_id'] = _currentUserId;
+    map['user_id'] = currentUserId;
     final count = await db.update(
       'transactions',
       map,
       where: 'id = ? AND user_id = ?',
-      whereArgs: [item.id, _currentUserId],
+      whereArgs: [item.id, currentUserId],
     );
     await printAllTransactions();
     return count;
@@ -166,7 +186,7 @@ class DatabaseService {
     final maps = await db.query(
       'transactions',
       where: 'user_id = ?',
-      whereArgs: [_currentUserId],
+      whereArgs: [currentUserId],
       orderBy: 'date DESC, time DESC',
     );
     return maps.map((m) => TransactionItem.fromMap(m)).toList();
@@ -178,7 +198,7 @@ class DatabaseService {
     final maps = await db.query(
       'transactions',
       where: 'id = ? AND user_id = ?',
-      whereArgs: [id, _currentUserId],
+      whereArgs: [id, currentUserId],
       limit: 1,
     );
     if (maps.isEmpty) return null;
@@ -357,7 +377,7 @@ class DatabaseService {
     final maps = await db.query(
       'synced_emails',
       where: 'message_id = ? AND user_id = ?',
-      whereArgs: [messageId, _currentUserId],
+      whereArgs: [messageId, currentUserId],
       limit: 1,
     );
     return maps.isNotEmpty;
@@ -369,7 +389,7 @@ class DatabaseService {
       'synced_emails',
       {
         'message_id': messageId,
-        'user_id': _currentUserId,
+        'user_id': currentUserId,
         'synced_at': DateTime.now().toIso8601String(),
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -383,7 +403,7 @@ class DatabaseService {
     final maps = await db.query(
       'app_settings',
       where: 'key = ? AND user_id = ?',
-      whereArgs: [key, _currentUserId],
+      whereArgs: [key, currentUserId],
       limit: 1,
     );
     if (maps.isEmpty) return null;
@@ -396,7 +416,7 @@ class DatabaseService {
       'app_settings',
       {
         'key': key,
-        'user_id': _currentUserId,
+        'user_id': currentUserId,
         'value': value,
       },
       conflictAlgorithm: ConflictAlgorithm.replace,
@@ -408,7 +428,46 @@ class DatabaseService {
     await db.delete(
       'app_settings',
       where: 'key = ? AND user_id = ?',
-      whereArgs: [key, _currentUserId],
+      whereArgs: [key, currentUserId],
     );
+  }
+
+  // ─── Category ────────────────────────────────────────────────────
+
+  /// Thêm category mới vào DB (tự gắn user_id hiện tại)
+  Future<int> insertCategory(CategoryItem item) async {
+    final db = await database;
+    final map = item.toMap();
+    map['user_id'] = currentUserId;
+    final id = await db.insert('category', map);
+    // In lại toàn bộ bảng sau mỗi lần thêm để debug
+    await printAllTransactions();
+    return id;
+  }
+
+  /// Lấy category theo ID của user hiện tại
+  Future<CategoryItem?> getCategoryItem_byID(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'category',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [0, currentUserId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return null;
+    return CategoryItem.fromMap(maps.first);
+  }
+
+  // Xoá category trong DB của user hiện tại theo ID giao dich
+  Future<int?> deleteCategory(int? id) async {
+    final db = await database;
+    await db.delete(
+      'category', // tên bảng
+      where: 'id = ?', // điều kiện
+      whereArgs: [id], // giá trị thay vào ?
+    );
+    // In lại toàn bộ bảng sau mỗi lần thêm để debug
+    await printAllTransactions();
+    return id;
   }
 }
