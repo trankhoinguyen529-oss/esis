@@ -1,6 +1,7 @@
 import 'package:a_management/data/data_category.dart';
 import 'package:a_management/widget/icon_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../data/data_transaction.dart';
@@ -30,12 +31,13 @@ class DatabaseService {
     final path = join(dbPath, 'transactions.db');
     return await openDatabase(
       path,
-      version: 5,
+      version: 6,
       onCreate: (db, version) async {
         await _createTransactionTable(db);
         await _createSyncedEmailsTable(db);
         await _createAppSettingsTable(db);
         await _createCategoryTable(db);
+        await _seedDefaultCategories(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -77,6 +79,11 @@ class DatabaseService {
             await _createAppSettingsTable(db);
           }
         }
+        if (oldVersion < 6) {
+          // ⬅️ tạo bảng category + seed default cho user cũ
+          await _createCategoryTable(db);
+          await _seedDefaultCategories(db);
+        }
       },
     );
   }
@@ -106,7 +113,7 @@ class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         title TEXT NOT NULL,
-        icon_code INTEGER NOT NULL,
+        icon_code INTEGER NOT NULL
       )
     ''');
   }
@@ -434,6 +441,39 @@ class DatabaseService {
 
   // ─── Category ────────────────────────────────────────────────────
 
+  // Category default
+  Future<void> _seedDefaultCategories(Database db) async {
+    const Map<String, IconData> icons = {
+      'Food': Icons.restaurant,
+      'Transport': Icons.directions_bus,
+      'Medicine': Icons.medical_services,
+      'Groceries': Icons.local_grocery_store,
+      'Rent': Icons.home,
+      'Gifts': Icons.card_giftcard,
+      'Savings': Icons.savings,
+      'Entertainment': Icons.movie,
+      'Salary': Icons.wallet,
+      'Work': Icons.work,
+      'Gaming': Icons.sports_esports,
+      'Others': Icons.more_horiz,
+      'Bank': Icons.account_balance_rounded,
+      'All': Icons.menu,
+    };
+
+    final batch = db.batch();
+    int id = 1;
+    for (final entry in icons.entries) {
+      batch.insert('category', {
+        'id': id,
+        'user_id': '0',
+        'title': entry.key,
+        'icon_code': entry.value.codePoint,
+      });
+      id++;
+    }
+    await batch.commit(noResult: true);
+  }
+
   /// Thêm category mới vào DB (tự gắn user_id hiện tại)
   Future<int> insertCategory(CategoryItem item) async {
     final db = await database;
@@ -446,16 +486,15 @@ class DatabaseService {
   }
 
   /// Lấy category theo ID của user hiện tại
-  Future<CategoryItem?> getCategoryItem_byID(int id) async {
+  Future<List<CategoryItem>> getCategory() async {
     final db = await database;
     final maps = await db.query(
       'category',
-      where: 'id = ? AND user_id = ?',
+      where: 'user_id = ? OR user_id = ?',
       whereArgs: [0, currentUserId],
-      limit: 1,
+      orderBy: 'id ASC',
     );
-    if (maps.isEmpty) return null;
-    return CategoryItem.fromMap(maps.first);
+    return maps.map((m) => CategoryItem.fromMap(m)).toList();
   }
 
   // Xoá category trong DB của user hiện tại theo ID giao dich

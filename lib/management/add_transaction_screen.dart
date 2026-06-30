@@ -274,8 +274,8 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       const SizedBox(height: 8),
                       textfield.buildFormField_1(
                         context: context,
-                        icons: CategoryItem1.icons,
-                        excludedIcon: {'All', 'Bank'},
+                        items: CategoryItem1.icons,
+                        excludedItems: {'All', 'Bank'},
                         ifSelected: (selected) {
                           setState(() => selectedCategory = selected);
                         },
@@ -294,30 +294,6 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             : null,
                       ),
                       const SizedBox(height: 16),
-                      // // Amount field
-                      // textfield.buildLabel('Amount (\$)'),
-                      // const SizedBox(height: 8),
-                      // textfield.buildTextField(
-                      //   controller: _amountCtrl,
-                      //   hint: '0.00',
-                      //   icon: Icons.attach_money,
-                      //   keyboardType:
-                      //       const TextInputType.numberWithOptions(decimal: true),
-                      //   inputFormatters: [
-                      //     FilteringTextInputFormatter.allow(
-                      //         RegExp(r'^\d+\.?\d{0,2}')),
-                      //   ],
-                      //   validator: (v) {
-                      //     if (v == null || v.trim().isEmpty) {
-                      //       return 'Please Enter Amount';
-                      //     }
-                      //     final parsed = double.tryParse(v.trim());
-                      //     if (parsed == null || parsed <= 0) {
-                      //       return 'Invalid Amount';
-                      //     }
-                      //     return null;
-                      //   },
-                      // ),
                       // Amount field
                       textfield.buildLabel('Amount (\$)'),
                       const SizedBox(height: 8),

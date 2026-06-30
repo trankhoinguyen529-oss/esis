@@ -43,8 +43,9 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
   TextEditingController? _activeCtrl;
 
   bool _isSaving = false;
-  late DatabaseService db;
+  DatabaseService db = DatabaseService();
   TransactionItem? item;
+  Map<String, IconData> itemMap = {};
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
@@ -52,6 +53,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     // ✅ set sẵn giá trị vào controller
     _titleCtrl.text = widget.selectedTitle;
     _amountFromCtrl.text = widget.selectedAmountFrom == 0.00
@@ -60,6 +62,14 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
     _amountToCtrl.text = widget.selectedAmountTo >= 1000000000000.00
         ? ''
         : widget.selectedAmountTo.toStringAsFixed(2);
+  }
+
+  Future<void> _loadCategories() async {
+    final entries = await db.getCategory();
+    if (!mounted) return;
+    setState(() {
+      itemMap = {for (final cat in entries) cat.title: cat.icon};
+    });
   }
 
   @override
@@ -149,8 +159,8 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       const SizedBox(height: 8),
                       _textfield.buildFormField_1(
                         context: context,
-                        icons: TypeItem.icons,
-                        excludedIcon: {},
+                        items: TypeItem.icons,
+                        excludedItems: {},
                         ifSelected: (selected) {
                           setState(() => widget.selectedType = selected);
                         },
@@ -162,8 +172,8 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       const SizedBox(height: 8),
                       _textfield.buildFormField_1(
                         context: context,
-                        icons: BankItem.icons,
-                        excludedIcon: {},
+                        items: BankItem.icons,
+                        excludedItems: {},
                         ifSelected: (selected) {
                           setState(() => widget.selectedBank = selected);
                         },
@@ -176,8 +186,8 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       const SizedBox(height: 8),
                       _textfield.buildFormField_M(
                         context: context,
-                        icons: CategoryItem1.icons,
-                        excludedIcon: {'Bank'},
+                        items: itemMap,
+                        excludedItems: {'Bank'},
                         ifSelected: (selected) {
                           setState(() => widget.selectedCategories = selected);
                         },

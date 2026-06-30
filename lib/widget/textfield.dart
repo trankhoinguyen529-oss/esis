@@ -35,7 +35,8 @@ class Textfield {
       ),
       decoration: InputDecoration(
         hintText: hint,
-        prefixIcon: Icon(icon, color: disabled ? Colors.black38 : primary, size: 22),
+        prefixIcon:
+            Icon(icon, color: disabled ? Colors.black38 : primary, size: 22),
         filled: true,
         fillColor: disabled ? Colors.grey[200] : Colors.white,
         contentPadding:
@@ -66,8 +67,8 @@ class Textfield {
 
   Widget buildFormField_1({
     required BuildContext context,
-    required Map<String, IconData?> icons,
-    required Set<String> excludedIcon,
+    required Map<String, IconData> items,
+    required Set<String> excludedItems,
     required Function(String) ifSelected,
     required String selectedKey,
   }) {
@@ -80,8 +81,8 @@ class Textfield {
           ),
           builder: (_) => ListView(
             shrinkWrap: true,
-            children: icons.entries
-                .where((entry) => !excludedIcon.contains(entry.key))
+            children: items.entries
+                .where((entry) => !excludedItems.contains(entry.key))
                 .map((entry) {
               return ListTile(
                 leading: Icon(entry.value, color: const Color(0xFF14C38E)),
@@ -103,7 +104,7 @@ class Textfield {
         ),
         child: Row(
           children: [
-            Icon(icons[selectedKey], color: const Color(0xFF14C38E)),
+            Icon(items[selectedKey], color: const Color(0xFF14C38E)),
             const SizedBox(width: 12),
             Text(selectedKey, style: const TextStyle(fontSize: 16)),
             const Spacer(),
@@ -116,8 +117,8 @@ class Textfield {
 
   Widget buildFormField_M({
     required BuildContext context,
-    required Map<String, IconData?> icons,
-    required Set<String> excludedIcon,
+    required Map<String, IconData> items,
+    required Set<String> excludedItems,
     required Function(Set<String>) ifSelected, // ✅ đổi sang Set
     required Set<String> selectedKeys, // ✅ đổi sang Set
   }) {
@@ -156,8 +157,8 @@ class Textfield {
                     ),
                   ),
                   const Divider(height: 1),
-                  ...icons.entries
-                      .where((entry) => !excludedIcon.contains(entry.key))
+                  ...items.entries
+                      .where((entry) => !excludedItems.contains(entry.key))
                       .map((entry) {
                     final isSelected = tempSelected.contains(entry.key);
                     return ListTile(
@@ -210,7 +211,7 @@ class Textfield {
           children: [
             // ✅ hiện icon của item đầu tiên nếu có
             Icon(
-              selectedKeys.isEmpty ? null : icons[selectedKeys.first],
+              selectedKeys.isEmpty ? null : items[selectedKeys.first],
               color: const Color(0xFF14C38E),
             ),
             const SizedBox(width: 12),

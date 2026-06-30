@@ -37,6 +37,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
   double selectedAmount = 0.00;
   late DatabaseService db;
   TransactionItem? item;
+  Map<String, IconData> itemMap = {};
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
@@ -47,6 +48,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     super.initState();
     db = DatabaseService();
     _loadData(); // gọi hàm async riêng
+    _loadCategories();
   }
 
   Future<void> _loadData() async {
@@ -72,6 +74,14 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
       selectedDate = item!.date;
       _titleCtrl.text = item!.title;
       _amountCtrl.text = item!.amount.toStringAsFixed(2);
+    });
+  }
+
+  Future<void> _loadCategories() async {
+    final entries = await db.getCategory();
+    if (!mounted) return;
+    setState(() {
+      itemMap = {for (final cat in entries) cat.title: cat.icon};
     });
   }
 
@@ -302,8 +312,8 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       const SizedBox(height: 8),
                       _textField.buildFormField_1(
                         context: context,
-                        icons: CategoryItem1.icons,
-                        excludedIcon: {'All', 'Bank'},
+                        items: itemMap,
+                        excludedItems: {'All', 'Bank'},
                         ifSelected: (selected) {
                           setState(() => selectedCategory = selected);
                         },
