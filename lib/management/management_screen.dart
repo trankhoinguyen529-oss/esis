@@ -1,21 +1,32 @@
+import 'package:a_management/assets/icon/categoryIcon.dart';
 import 'package:a_management/management/bankdetailscreen.dart';
 import 'package:a_management/services/database_service.dart';
-import 'package:a_management/widget/icon_map.dart';
+import 'package:a_management/widget/bottomsheet.dart';
 import 'package:a_management/management/categorydetail_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:a_management/widget/widget.dart';
 
 import '../data/data_category.dart';
 
-class ManagementScreen extends StatelessWidget {
+class ManagementScreen extends StatefulWidget {
   final VoidCallback? onTransactionAdded;
   const ManagementScreen({super.key, this.onTransactionAdded});
+
+  @override
+  State<ManagementScreen> createState() => _ManagementScreenState();
+}
+
+class _ManagementScreenState extends State<ManagementScreen> {
+  String newCategoryTitle = '';
+  IconData newCategoryIcon = Icons.category;
 
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF00C18A);
     const surface = Color(0xFFF3FFF8);
     final DatabaseService db = DatabaseService();
+    final double tileSize =
+        (MediaQuery.of(context).size.width - 18 * 2 - 12 * 2) / 3;
 
     return Container(
       color: primary,
@@ -82,6 +93,12 @@ class ManagementScreen extends StatelessWidget {
                       future: db.getCategory(),
                       builder: (context, snapshot) {
                         final entries = snapshot.data ?? [];
+                        // hide built-in 'Bank' and 'All' categories from the grid
+                        final visibleEntries = entries
+                            .where((e) =>
+                                e.title.toLowerCase() != 'bank' &&
+                                e.title.toLowerCase() != 'all')
+                            .toList();
                         return GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -92,10 +109,9 @@ class ManagementScreen extends StatelessWidget {
                             mainAxisSpacing: 12,
                             childAspectRatio: 1,
                           ),
-                          itemCount:
-                              (entries.length - 2).clamp(0, entries.length),
+                          itemCount: visibleEntries.length,
                           itemBuilder: (context, index) {
-                            final cat = entries[index];
+                            final cat = visibleEntries[index];
                             return CategoryTile().build(
                               context,
                               cat.icon,
@@ -108,7 +124,7 @@ class ManagementScreen extends StatelessWidget {
                                   ),
                                 );
                                 if (result == true) {
-                                  onTransactionAdded?.call();
+                                  widget.onTransactionAdded?.call();
                                 }
                               },
                             );
@@ -126,31 +142,78 @@ class ManagementScreen extends StatelessWidget {
                       ),
                     ),
                     const SizedBox(height: 6),
-                    SizedBox(
-                      width: (MediaQuery.of(context).size.width -
-                              18 * 2 -
-                              12 * 2) /
-                          3,
-                      height: (MediaQuery.of(context).size.width -
-                              18 * 2 -
-                              12 * 2) /
-                          3,
-                      child: GestureDetector(
-                        onTap: () {},
-                        child: CategoryTile().build(
-                          context,
-                          Icons.account_balance_rounded,
-                          'Bank',
-                          () async {
-                            final result = await Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) => Bankdetail(),
-                              ),
-                            );
-                            if (result == true) onTransactionAdded?.call();
-                          },
+                    //Nút giao dịch qua Bank
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: tileSize,
+                          height: tileSize,
+                          child: GestureDetector(
+                            onTap: () {},
+                            child: CategoryTile().build(
+                              context,
+                              Icons.account_balance_rounded,
+                              'Bank',
+                              () async {
+                                final result = await Navigator.of(context).push(
+                                  MaterialPageRoute(
+                                    builder: (_) => Bankdetail(),
+                                  ),
+                                );
+                                if (result == true)
+                                  widget.onTransactionAdded?.call();
+                              },
+                            ),
+                          ),
                         ),
-                      ),
+                        const SizedBox(width: 12),
+                        //Nút Add Category
+                        SizedBox(
+                          width: tileSize,
+                          height: tileSize,
+                          child: CategoryTile().build(
+                            context,
+                            Icons.add,
+                            'Add Category',
+                            () async {
+                              final result = await showCustomBottomSheet(
+                                context: context,
+                                iconList: CategoryIcon.categoryIcons,
+                              );
+                              if (result != null) {
+                                setState(() {
+                                  newCategoryTitle =
+                                      (result['title'] as String?) ?? '';
+                                  newCategoryIcon =
+                                      (result['icon'] as IconData?) ??
+                                          Icons.category;
+                                });
+
+                                // persist into DB
+                                try {
+                                  final db = DatabaseService();
+                                  final item = CategoryItem(
+                                    userId: db.currentUserId,
+                                    icon: newCategoryIcon,
+                                    title: newCategoryTitle,
+                                  );
+                                  await db.insertCategory(item);
+                                  // refresh UI to include the newly inserted category
+                                  setState(() {});
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                        content: Text('Category saved')),
+                                  );
+                                } catch (e) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    SnackBar(content: Text('Save failed: $e')),
+                                  );
+                                }
+                              }
+                            },
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 18),
                   ],

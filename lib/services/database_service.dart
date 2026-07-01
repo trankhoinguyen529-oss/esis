@@ -1,5 +1,4 @@
 import 'package:a_management/data/data_category.dart';
-import 'package:a_management/widget/icon_map.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
@@ -483,6 +482,24 @@ class DatabaseService {
     // In lại toàn bộ bảng sau mỗi lần thêm để debug
     await printAllTransactions();
     return id;
+  }
+
+  /// Xoá toàn bộ category của user không phải user mặc định (user_id != '0')
+  Future<void> clearUserCategories() async {
+    final db = await database;
+    await db.delete(
+      'category',
+      where: 'user_id != ?',
+      whereArgs: ['0'],
+    );
+  }
+
+  /// Reset category về dữ liệu mặc định cho user 0
+  Future<void> resetCategoryDatabase() async {
+    final db = await database;
+    await clearUserCategories();
+    await db.delete('category', where: 'user_id = ?', whereArgs: ['0']);
+    await _seedDefaultCategories(db);
   }
 
   /// Lấy category theo ID của user hiện tại
