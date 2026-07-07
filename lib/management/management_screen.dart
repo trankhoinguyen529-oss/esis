@@ -124,6 +124,8 @@ class _ManagementScreenState extends State<ManagementScreen> {
                                   ),
                                 );
                                 if (result == true) {
+                                  // Refresh categories list
+                                  setState(() {});
                                   widget.onTransactionAdded?.call();
                                 }
                               },
@@ -205,9 +207,18 @@ class _ManagementScreenState extends State<ManagementScreen> {
                                         content: Text('Category saved')),
                                   );
                                 } catch (e) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text('Save failed: $e')),
-                                  );
+                                  final msg = e.toString();
+                                  if (msg.contains('Title already used')) {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      const SnackBar(
+                                          content: Text('Title already used')),
+                                    );
+                                  } else {
+                                    ScaffoldMessenger.of(context).showSnackBar(
+                                      SnackBar(
+                                          content: Text('Save failed: $e')),
+                                    );
+                                  }
                                 }
                               }
                             },

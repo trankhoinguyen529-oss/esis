@@ -213,7 +213,7 @@ class BankEmailSyncService {
           IconData categoryIcon = Icons.account_balance_rounded;
 
           final transaction = TransactionItem(
-            icon: categoryIcon,
+            //icon: categoryIcon,
             title: parsed.description,
             category: parsed.category,
             time: parsed.time,
@@ -268,32 +268,8 @@ class BankEmailSyncService {
     final mockMessageId =
         'MOCK_${bank.toUpperCase()}_${DateTime.now().millisecondsSinceEpoch}';
 
-    // Map categories
-    IconData categoryIcon = Icons.more_horiz;
-    if (parsed.category == 'Food')
-      categoryIcon = Icons.restaurant;
-    else if (parsed.category == 'Transport')
-      categoryIcon = Icons.directions_bus;
-    else if (parsed.category == 'Medicine')
-      categoryIcon = Icons.medical_services;
-    else if (parsed.category == 'Groceries')
-      categoryIcon = Icons.local_grocery_store;
-    else if (parsed.category == 'Rent')
-      categoryIcon = Icons.home;
-    else if (parsed.category == 'Gifts')
-      categoryIcon = Icons.card_giftcard;
-    else if (parsed.category == 'Savings')
-      categoryIcon = Icons.savings;
-    else if (parsed.category == 'Entertainment')
-      categoryIcon = Icons.movie;
-    else if (parsed.category == 'Salary')
-      categoryIcon = Icons.wallet;
-    else if (parsed.category == 'Work')
-      categoryIcon = Icons.work;
-    else if (parsed.category == 'Gaming') categoryIcon = Icons.sports_esports;
-
     final transaction = TransactionItem(
-        icon: categoryIcon,
+        //icon: categoryIcon,
         title: parsed.description,
         category: parsed.category,
         time: parsed.time,

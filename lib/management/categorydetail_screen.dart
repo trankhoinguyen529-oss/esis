@@ -1,8 +1,10 @@
 import 'package:a_management/management/edit_transaction_screen.dart';
+import 'package:a_management/services/database_service.dart';
+import 'package:a_management/widget/bottomsheet.dart';
+
 import 'package:flutter/material.dart';
 import 'add_transaction_screen.dart';
 import 'package:a_management/widget/widget.dart';
-import 'management_screen.dart';
 
 class Categorydetail extends StatefulWidget {
   final String category;
@@ -13,6 +15,16 @@ class Categorydetail extends StatefulWidget {
 }
 
 class _CategorydetailState extends State<Categorydetail> {
+  late String displayedCategory;
+  late DatabaseService db;
+
+  @override
+  void initState() {
+    super.initState();
+    displayedCategory = widget.category;
+    db = DatabaseService();
+  }
+
   @override
   Widget build(BuildContext context) {
     const primary = Color(0xFF00C18A);
@@ -86,36 +98,75 @@ class _CategorydetailState extends State<Categorydetail> {
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
                           Text(
-                            widget.category,
+                            displayedCategory,
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.w800,
                               color: Colors.black87,
                             ),
                           ),
-                          Container(
-                            width: 40,
-                            height: 40,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF00C18A),
-                              shape: BoxShape.circle,
-                            ),
-                            child: IconButton(
-                              icon: const Icon(Icons.add),
-                              onPressed: () async {
-                                final result = await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => AddTransactionScreen(
-                                      category: widget.category,
-                                    ),
-                                  ),
-                                );
-                                //debugPrint('******Result: $result');
-                                if (result == true) {
-                                  setState(() {});
-                                }
-                              },
-                            ),
+                          //Edit Category
+                          Row(
+                            children: [
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF00C18A),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.more_horiz),
+                                  onPressed: () async {
+                                    final categoryId =
+                                        await db.getCategoryId(widget.category);
+
+                                    // Mở edit category bottom sheet
+                                    final result =
+                                        await showEditCategoryBottomSheet(
+                                      context: context,
+                                      id: categoryId,
+                                    );
+
+                                    if (result == true) {
+                                      final categories = await db.getCategory();
+                                      final updated = categories.firstWhere(
+                                          (item) => item.id == categoryId);
+                                      setState(() {
+                                        displayedCategory = updated.title;
+                                      });
+                                    }
+                                  },
+                                ),
+                              ),
+                              SizedBox(width: 10),
+                              //Add transaction
+                              Container(
+                                width: 40,
+                                height: 40,
+                                decoration: const BoxDecoration(
+                                  color: Color(0xFF00C18A),
+                                  shape: BoxShape.circle,
+                                ),
+                                child: IconButton(
+                                  icon: const Icon(Icons.add),
+                                  onPressed: () async {
+                                    final result =
+                                        await Navigator.of(context).push(
+                                      MaterialPageRoute(
+                                        builder: (_) => AddTransactionScreen(
+                                          category: widget.category,
+                                        ),
+                                      ),
+                                    );
+                                    //debugPrint('******Result: $result');
+                                    if (result == true) {
+                                      setState(() {});
+                                    }
+                                  },
+                                ),
+                              ),
+                            ],
                           ),
                         ],
                       ),
@@ -132,7 +183,7 @@ class _CategorydetailState extends State<Categorydetail> {
                         period: -1,
                         type: 'All',
                         bank: 'All',
-                        categories: {widget.category},
+                        categories: {displayedCategory},
                         title: '',
                         amountFrom: 0.00,
                         amountTo: 100000000000000.00,

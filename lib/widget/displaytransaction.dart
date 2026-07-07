@@ -125,11 +125,41 @@ class Displaytransaction {
   }
 }
 
-class _TransactionItemWidget extends StatelessWidget {
+class _TransactionItemWidget extends StatefulWidget {
   final TransactionItem item;
   final VoidCallback ontap;
   const _TransactionItemWidget({required this.item, required this.ontap});
+
   @override
+  State<_TransactionItemWidget> createState() => _TransactionItemWidgetState();
+}
+
+class _TransactionItemWidgetState extends State<_TransactionItemWidget> {
+  IconData? _icon;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadCategoryIcon();
+  }
+
+  @override
+  void didUpdateWidget(covariant _TransactionItemWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Reload icon mỗi khi widget update (parent setState)
+    _loadCategoryIcon();
+  }
+
+  Future<void> _loadCategoryIcon() async {
+    final db = DatabaseService();
+    final icon = await db.getCategoryIcon(widget.item.category);
+    if (mounted) {
+      setState(() {
+        _icon = icon;
+      });
+    }
+  }
+
   Widget stackContainer(IconData? icon) {
     return Stack(
       clipBehavior: Clip.none,
@@ -142,15 +172,14 @@ class _TransactionItemWidget extends StatelessWidget {
             color: const Color(0xFFE8F8F3),
             borderRadius: BorderRadius.circular(14),
           ),
-          child: Icon(icon,
-              size: 28, color: const Color(0xFF00C18A)), // ✅ icon nhỏ lại
+          child: Icon(icon, size: 28, color: const Color(0xFF00C18A)),
         ),
         // Container nhỏ góc dưới phải
         Positioned(
           bottom: -8,
           right: -8,
           child: Container(
-            width: 27, // ✅ tăng lên chút để icon vừa
+            width: 27,
             height: 27,
             decoration: BoxDecoration(
               color: Colors.blue,
@@ -159,7 +188,7 @@ class _TransactionItemWidget extends StatelessWidget {
             ),
             child: const Icon(
               Icons.account_balance_rounded,
-              size: 15, // ✅ icon nhỏ vừa với container
+              size: 15,
               color: Colors.white,
             ),
           ),
@@ -169,17 +198,19 @@ class _TransactionItemWidget extends StatelessWidget {
   }
 
   Widget build(BuildContext context) {
-    final isExpense = item.isExpense;
-    final isBank = item.isBank;
+    final isExpense = widget.item.isExpense;
+    final isBank = widget.item.isBank;
+    final icon = _icon ?? Icons.category;
+
     return GestureDetector(
-      onTap: ontap,
+      onTap: widget.ontap,
       behavior: HitTestBehavior.opaque,
       child: Padding(
         padding: const EdgeInsets.symmetric(vertical: 10),
         child: Row(
           children: [
             (isBank)
-                ? stackContainer(item.icon)
+                ? stackContainer(icon)
                 : Container(
                     width: 56,
                     height: 56,
@@ -187,8 +218,7 @@ class _TransactionItemWidget extends StatelessWidget {
                       color: const Color(0xFFE8F8F3),
                       borderRadius: BorderRadius.circular(16),
                     ),
-                    child: Icon(item.icon,
-                        color: const Color(0xFF00C18A), size: 28),
+                    child: Icon(icon, color: const Color(0xFF00C18A), size: 28),
                   ),
             const SizedBox(width: 12),
             Expanded(
@@ -196,7 +226,7 @@ class _TransactionItemWidget extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    item.title,
+                    widget.item.title,
                     style: const TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w700,
@@ -204,7 +234,7 @@ class _TransactionItemWidget extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    '${item.time}  ${item.date.day}/${item.date.month}/${item.date.year}',
+                    '${widget.item.time}  ${widget.item.date.day}/${widget.item.date.month}/${widget.item.date.year}',
                     style: const TextStyle(fontSize: 12, color: Colors.black54),
                   ),
                 ],
@@ -214,14 +244,14 @@ class _TransactionItemWidget extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
                 Text(
-                  item.category,
+                  widget.item.category,
                   style: const TextStyle(color: Colors.black54, fontSize: 12),
                 ),
                 const SizedBox(height: 6),
                 Text(
                   isExpense
-                      ? '-\$${item.amount.toStringAsFixed(2)}'
-                      : '+\$${item.amount.toStringAsFixed(2)}',
+                      ? '-\$${widget.item.amount.toStringAsFixed(2)}'
+                      : '+\$${widget.item.amount.toStringAsFixed(2)}',
                   style: TextStyle(
                     color:
                         isExpense ? Colors.red[400] : const Color(0xFF00C18A),

@@ -101,8 +101,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
     final timeStr = item!.time;
     final updatedItem = TransactionItem(
       id: item!.id,
-      icon: CategoryItem1.icons[selectedCategory] ??
-          CategoryItem1.icons['Others']!,
+      //icon: itemMap[selectedCategory]!,
       title: _titleCtrl.text.trim(),
       category: selectedCategory,
       time: timeStr,

@@ -1,8 +1,5 @@
-import 'package:flutter/material.dart';
-
 class TransactionItem {
   final int? id;
-  final IconData icon;
   final String title;
   final String category;
   final String time;
@@ -13,7 +10,6 @@ class TransactionItem {
 
   const TransactionItem({
     this.id,
-    required this.icon,
     required this.title,
     required this.category,
     required this.time,
@@ -27,7 +23,6 @@ class TransactionItem {
   factory TransactionItem.fromMap(Map<String, dynamic> map) {
     return TransactionItem(
       id: map['id'] as int?,
-      icon: IconData(map['icon_code'] as int, fontFamily: 'MaterialIcons'),
       title: map['title'] as String,
       category: map['category'] as String,
       time: map['time'] as String,
@@ -44,7 +39,6 @@ class TransactionItem {
       if (id != null) 'id': id,
       'title': title,
       'category': category,
-      'icon_code': icon.codePoint,
       'amount': amount,
       'is_expense': isExpense ? 1 : 0,
       'date': date.toIso8601String(),

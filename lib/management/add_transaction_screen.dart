@@ -31,7 +31,12 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   bool _isSaving = false;
   Textfield textfield = Textfield();
   late String selectedCategory =
-      (widget.category != 'All') ? widget.category! : 'Others';
+      (widget.category != null && widget.category != 'All')
+          ? widget.category!
+          : 'Others';
+
+  DatabaseService db = DatabaseService();
+  Map<String, IconData> itemMap = {};
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
@@ -39,6 +44,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   @override
   void initState() {
     super.initState();
+    _loadCategories();
     _titleCtrl.text = selectedCategory;
   }
 
@@ -69,6 +75,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     }
   }
 
+  Future<void> _loadCategories() async {
+    final entries = await db.getCategory();
+    if (!mounted) return;
+    setState(() {
+      itemMap = {for (final cat in entries) cat.title: cat.icon};
+    });
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
@@ -77,8 +91,11 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     final timeStr =
         '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
+    final resolvedIcon =
+        await DatabaseService().getCategoryIcon(selectedCategory);
+
     final item = TransactionItem(
-      icon: CategoryItem1.icons[selectedCategory]!,
+      //icon: resolvedIcon,
       title: _titleCtrl.text.trim(),
       category: selectedCategory,
       time: timeStr,
@@ -153,8 +170,14 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                             color: surface,
                             shape: BoxShape.circle,
                           ),
-                          child: Icon(CategoryItem1.icons[widget.category],
-                              color: primary, size: 36),
+                          child: FutureBuilder<IconData>(
+                            future: DatabaseService()
+                                .getCategoryIcon(selectedCategory),
+                            builder: (context, snapshot) {
+                              final icon = snapshot.data ?? Icons.category;
+                              return Icon(icon, color: primary, size: 36);
+                            },
+                          ),
                         ),
                         const SizedBox(height: 10),
                         Text(
@@ -274,7 +297,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       const SizedBox(height: 8),
                       textfield.buildFormField_1(
                         context: context,
-                        items: CategoryItem1.icons,
+                        items: itemMap,
                         excludedItems: {'All', 'Bank'},
                         ifSelected: (selected) {
                           setState(() => selectedCategory = selected);

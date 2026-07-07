@@ -30,7 +30,7 @@ class DatabaseService {
     final path = join(dbPath, 'transactions.db');
     return await openDatabase(
       path,
-      version: 6,
+      version: 7,
       onCreate: (db, version) async {
         await _createTransactionTable(db);
         await _createSyncedEmailsTable(db);
@@ -83,6 +83,23 @@ class DatabaseService {
           await _createCategoryTable(db);
           await _seedDefaultCategories(db);
         }
+        if (oldVersion < 7) {
+          // Remove icon_code column from transactions table
+          // SQLite doesn't support DROP COLUMN, so we need to recreate the table
+          try {
+            await db.execute(
+              "ALTER TABLE transactions RENAME TO transactions_old",
+            );
+            await _createTransactionTable(db);
+            await db.execute('''
+              INSERT INTO transactions (id, user_id, title, category, amount, is_expense, is_bank, date, time)
+              SELECT id, user_id, title, category, amount, is_expense, is_bank, date, time FROM transactions_old
+            ''');
+            await db.execute("DROP TABLE transactions_old");
+          } catch (e) {
+            debugPrint('Migration v7 failed: $e');
+          }
+        }
       },
     );
   }
@@ -95,7 +112,6 @@ class DatabaseService {
         user_id TEXT NOT NULL,
         title TEXT NOT NULL,
         category TEXT NOT NULL,
-        icon_code INTEGER NOT NULL,
         amount REAL NOT NULL,
         is_expense INTEGER NOT NULL DEFAULT 1,
         is_bank INTEGER NOT NULL DEFAULT 0,
@@ -478,10 +494,89 @@ class DatabaseService {
     final db = await database;
     final map = item.toMap();
     map['user_id'] = currentUserId;
+    // kiểm tra trùng title trong user hiện tại hoặc category mặc định (user_id = '0')
+    final existing = await db.rawQuery(
+      'SELECT id FROM category WHERE LOWER(title) = LOWER(?) AND (user_id = ? OR user_id = ? ) LIMIT 1',
+      [item.title, currentUserId, '0'],
+    );
+    if (existing.isNotEmpty) {
+      throw Exception('Title already used');
+    }
+
     final id = await db.insert('category', map);
     // In lại toàn bộ bảng sau mỗi lần thêm để debug
     await printAllTransactions();
     return id;
+  }
+
+  /// Trả về id của category có `title` thuộc user hiện tại.
+  /// Nếu không tìm thấy, trả về -1.
+  Future<int> getCategoryId(String title) async {
+    final db = await database;
+    final maps = await db.query(
+      'category',
+      where: 'title = ? AND user_id = ?',
+      whereArgs: [title, currentUserId],
+      limit: 1,
+    );
+    if (maps.isEmpty) return -1;
+    return maps.first['id'] as int;
+  }
+
+  /// Sửa title và icon cho category theo id của user hiện tại.
+  /// Cũng sẽ cập nhật tất cả transactions có category cũ sang title mới.
+  Future<int> editCategory(int id,
+      {required String title, required IconData icon}) async {
+    final db = await database;
+    final trimmedTitle = title.trim();
+    if (trimmedTitle.isEmpty) {
+      throw ArgumentError('Title cannot be empty');
+    }
+
+    // Lấy category cũ để biết old title
+    final oldCategory = await db.query(
+      'category',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, currentUserId],
+      limit: 1,
+    );
+    if (oldCategory.isEmpty) {
+      throw StateError('Category not found');
+    }
+    final oldTitle = oldCategory.first['title'] as String;
+
+    // Kiểm tra title trùng
+    final existing = await db.rawQuery(
+      'SELECT id FROM category WHERE LOWER(title) = LOWER(?) AND id != ? AND (user_id = ? OR user_id = ? ) LIMIT 1',
+      [trimmedTitle, id, currentUserId, '0'],
+    );
+    if (existing.isNotEmpty) {
+      throw Exception('Title alradey used');
+    }
+
+    // Update category
+    final count = await db.update(
+      'category',
+      {
+        'title': trimmedTitle,
+        'icon_code': icon.codePoint,
+      },
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, currentUserId],
+    );
+
+    // Update tất cả transactions có category cũ sang title mới
+    if (oldTitle != trimmedTitle) {
+      await db.update(
+        'transactions',
+        {'category': trimmedTitle},
+        where: 'category = ? AND user_id = ?',
+        whereArgs: [oldTitle, currentUserId],
+      );
+    }
+
+    await printAllTransactions();
+    return count;
   }
 
   /// Xoá toàn bộ category của user không phải user mặc định (user_id != '0')
@@ -525,5 +620,19 @@ class DatabaseService {
     // In lại toàn bộ bảng sau mỗi lần thêm để debug
     await printAllTransactions();
     return id;
+  }
+
+  // Lấy Icon của khi biết title và userID
+  Future<IconData> getCategoryIcon(String title) async {
+    final db = await database;
+    final maps = await db.query(
+      'category',
+      where: 'title = ? AND (user_id = ? OR user_id = ?)',
+      whereArgs: [title, currentUserId, '0'],
+      limit: 1,
+    );
+
+    final iconCode = maps.first['icon_code'] as int;
+    return IconData(iconCode, fontFamily: 'MaterialIcons');
   }
 }
