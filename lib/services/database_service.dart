@@ -610,14 +610,42 @@ class DatabaseService {
   }
 
   // Xoá category trong DB của user hiện tại theo ID giao dich
-  Future<int?> deleteCategory(int? id) async {
+  Future<int?> deleteCategory(
+    int? id, {
+    String replacementCategory = 'Others',
+    String? userId,
+  }) async {
+    if (id == null) return null;
+
     final db = await database;
-    await db.delete(
-      'category', // tên bảng
-      where: 'id = ?', // điều kiện
-      whereArgs: [id], // giá trị thay vào ?
+    final effectiveUserId = userId ?? currentUserId;
+
+    final existingCategory = await db.query(
+      'category',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, effectiveUserId],
+      limit: 1,
     );
-    // In lại toàn bộ bảng sau mỗi lần thêm để debug
+
+    if (existingCategory.isEmpty) {
+      throw StateError('Category not found');
+    }
+
+    final oldTitle = existingCategory.first['title'] as String;
+
+    await db.update(
+      'transactions',
+      {'category': replacementCategory},
+      where: 'category = ? AND user_id = ?',
+      whereArgs: [oldTitle, effectiveUserId],
+    );
+
+    await db.delete(
+      'category',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, effectiveUserId],
+    );
+
     await printAllTransactions();
     return id;
   }

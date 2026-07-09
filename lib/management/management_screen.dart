@@ -93,12 +93,17 @@ class _ManagementScreenState extends State<ManagementScreen> {
                       future: db.getCategory(),
                       builder: (context, snapshot) {
                         final entries = snapshot.data ?? [];
-                        // hide built-in 'Bank' and 'All' categories from the grid
                         final visibleEntries = entries
                             .where((e) =>
                                 e.title.toLowerCase() != 'bank' &&
                                 e.title.toLowerCase() != 'all')
-                            .toList();
+                            .toList()
+                          ..sort((a, b) {
+                            if (a.title.toLowerCase() == 'others')
+                              return 1; // ⬅️ others xuống cuối
+                            if (b.title.toLowerCase() == 'others') return -1;
+                            return 0; // giữ nguyên thứ tự các item khác
+                          });
                         return GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -124,7 +129,6 @@ class _ManagementScreenState extends State<ManagementScreen> {
                                   ),
                                 );
                                 if (result == true) {
-                                  // Refresh categories list
                                   setState(() {});
                                   widget.onTransactionAdded?.call();
                                 }
@@ -150,22 +154,19 @@ class _ManagementScreenState extends State<ManagementScreen> {
                         SizedBox(
                           width: tileSize,
                           height: tileSize,
-                          child: GestureDetector(
-                            onTap: () {},
-                            child: CategoryTile().build(
-                              context,
-                              Icons.account_balance_rounded,
-                              'Bank',
-                              () async {
-                                final result = await Navigator.of(context).push(
-                                  MaterialPageRoute(
-                                    builder: (_) => Bankdetail(),
-                                  ),
-                                );
-                                if (result == true)
-                                  widget.onTransactionAdded?.call();
-                              },
-                            ),
+                          child: CategoryTile().build(
+                            context,
+                            Icons.account_balance_rounded,
+                            'Bank',
+                            () async {
+                              final result = await Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => Bankdetail(),
+                                ),
+                              );
+                              if (result == true)
+                                widget.onTransactionAdded?.call();
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),

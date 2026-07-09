@@ -1,5 +1,6 @@
 import 'package:a_management/assets/icon/categoryIcon.dart';
 import 'package:a_management/services/database_service.dart';
+import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 
 class CustomBottomSheet extends StatefulWidget {
@@ -130,6 +131,7 @@ class _EditCategoryBottomSheetState extends State<EditCategoryBottomSheet> {
   final TextEditingController _titleController = TextEditingController();
   IconData? _selectedIcon;
   bool _isLoading = true;
+  ShowDialog sd = ShowDialog();
 
   @override
   void initState() {
@@ -156,6 +158,29 @@ class _EditCategoryBottomSheetState extends State<EditCategoryBottomSheet> {
   void dispose() {
     _titleController.dispose();
     super.dispose();
+  }
+
+  Future<void> _deleteCategory() async {
+    sd.showLogoutDialog(
+      context,
+      'Delete Category',
+      'Do you want to delete category',
+      () {},
+      () {},
+      () async {
+        try {
+          final db = DatabaseService();
+          await db.deleteCategory(widget.id, replacementCategory: 'Others');
+          if (!mounted) return;
+          Navigator.of(context).pop(true);
+        } catch (e) {
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Delete failed: $e')),
+          );
+        }
+      },
+    );
   }
 
   Future<void> _saveCategory() async {
@@ -204,12 +229,22 @@ class _EditCategoryBottomSheetState extends State<EditCategoryBottomSheet> {
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: TextButton(
-                    onPressed: () => Navigator.of(context).pop(false),
-                    child: const Text('Cancel'),
-                  ),
+                Row(
+                  children: [
+                    TextButton.icon(
+                      onPressed: _deleteCategory,
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                      label: const Text(
+                        'Delete',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () => Navigator.of(context).pop(false),
+                      child: const Text('Cancel'),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 8),
                 TextField(

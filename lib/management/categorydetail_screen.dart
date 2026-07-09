@@ -108,37 +108,51 @@ class _CategorydetailState extends State<Categorydetail> {
                           //Edit Category
                           Row(
                             children: [
-                              Container(
-                                width: 40,
-                                height: 40,
-                                decoration: const BoxDecoration(
-                                  color: Color(0xFF00C18A),
-                                  shape: BoxShape.circle,
-                                ),
-                                child: IconButton(
-                                  icon: const Icon(Icons.more_horiz),
-                                  onPressed: () async {
-                                    final categoryId =
-                                        await db.getCategoryId(widget.category);
+                              if (widget.category != 'Others')
+                                Container(
+                                  width: 40,
+                                  height: 40,
+                                  decoration: const BoxDecoration(
+                                    color: Color(0xFF00C18A),
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: IconButton(
+                                    icon: const Icon(Icons.more_horiz),
+                                    onPressed: () async {
+                                      final categoryId = await db
+                                          .getCategoryId(widget.category);
 
-                                    // Mở edit category bottom sheet
-                                    final result =
-                                        await showEditCategoryBottomSheet(
-                                      context: context,
-                                      id: categoryId,
-                                    );
+                                      // Mở edit category bottom sheet
+                                      final result =
+                                          await showEditCategoryBottomSheet(
+                                        context: context,
+                                        id: categoryId,
+                                      );
 
-                                    if (result == true) {
-                                      final categories = await db.getCategory();
-                                      final updated = categories.firstWhere(
-                                          (item) => item.id == categoryId);
-                                      setState(() {
-                                        displayedCategory = updated.title;
-                                      });
-                                    }
-                                  },
+                                      if (result == true) {
+                                        final categories =
+                                            await db.getCategory();
+                                        final updated = categories
+                                                .where((item) =>
+                                                    item.id == categoryId)
+                                                .isNotEmpty
+                                            ? categories.firstWhere(
+                                                (item) => item.id == categoryId)
+                                            : null;
+
+                                        if (updated == null) {
+                                          if (!mounted) return;
+                                          Navigator.of(context).pop(true);
+                                          return;
+                                        }
+
+                                        setState(() {
+                                          displayedCategory = updated.title;
+                                        });
+                                      }
+                                    },
+                                  ),
                                 ),
-                              ),
                               SizedBox(width: 10),
                               //Add transaction
                               Container(
