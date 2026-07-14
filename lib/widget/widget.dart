@@ -12,3 +12,4 @@ export 'numberkeyboard.dart';
 export 'custompiechart.dart';
 export 'scrolllist.dart';
 export 'package:a_management/widget/bottomsheet.dart';
+export 'displayexpenditure.dart';

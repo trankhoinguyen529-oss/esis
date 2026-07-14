@@ -3,6 +3,7 @@ import 'package:a_management/management/bankdetailscreen.dart';
 import 'package:a_management/services/database_service.dart';
 import 'package:a_management/widget/bottomsheet.dart';
 import 'package:a_management/management/categorydetail_screen.dart';
+import 'package:a_management/management_child/walletscreen.dart';
 import 'package:flutter/material.dart';
 import 'package:a_management/widget/widget.dart';
 
@@ -222,6 +223,24 @@ class _ManagementScreenState extends State<ManagementScreen> {
                                   }
                                 }
                               }
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        // Nút Wallet
+                        SizedBox(
+                          width: tileSize,
+                          height: tileSize,
+                          child: CategoryTile().build(
+                            context,
+                            Icons.account_balance_wallet_rounded,
+                            'Wallet',
+                            () async {
+                              Navigator.of(context).push(
+                                MaterialPageRoute(
+                                  builder: (_) => const WalletScreen(),
+                                ),
+                              );
                             },
                           ),
                         ),
