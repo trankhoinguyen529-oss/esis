@@ -157,39 +157,59 @@ class Textfield {
                     ),
                   ),
                   const Divider(height: 1),
-                  ...items.entries
-                      .where((entry) => !excludedItems.contains(entry.key))
-                      .map((entry) {
-                    final isSelected = tempSelected.contains(entry.key);
-                    return ListTile(
-                      leading:
-                          Icon(entry.value, color: const Color(0xFF14C38E)),
-                      title: Text(entry.key),
-                      trailing: isSelected
-                          ? const Icon(Icons.check, color: Color(0xFF14C38E))
-                          : null,
-                      onTap: () {
-                        setSheetState(() {
-                          if (entry.key == 'All') {
-                            // ✅ bấm All → chỉ chọn All, bỏ hết cái khác
-                            tempSelected = {'All'};
-                          } else {
-                            // ✅ bấm item khác → bỏ All, toggle item đó
-                            tempSelected.remove('All');
-                            if (isSelected) {
-                              tempSelected.remove(entry.key);
-                            } else {
-                              tempSelected.add(entry.key);
-                            }
-                            // ✅ nếu bỏ hết thì tự động về All
-                            if (tempSelected.isEmpty) {
-                              tempSelected = {'All'};
-                            }
-                          }
+                  ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: MediaQuery.of(context).size.height * 0.6,
+                    ),
+                    child: ListView(
+                      shrinkWrap: true,
+                      children: (() {
+                        final sortedEntries = items.entries
+                            .where((entry) => !excludedItems.contains(entry.key))
+                            .toList();
+                        sortedEntries.sort((a, b) {
+                          if (a.key == 'All' && b.key == 'Others') return 1;
+                          if (a.key == 'Others' && b.key == 'All') return -1;
+                          if (a.key == 'All') return 1;
+                          if (b.key == 'All') return -1;
+                          if (a.key == 'Others') return 1;
+                          if (b.key == 'Others') return -1;
+                          return 0;
                         });
-                      },
-                    );
-                  }),
+                        return sortedEntries.map((entry) {
+                          final isSelected = tempSelected.contains(entry.key);
+                          return ListTile(
+                            leading:
+                                Icon(entry.value, color: const Color(0xFF14C38E)),
+                            title: Text(entry.key),
+                            trailing: isSelected
+                                ? const Icon(Icons.check, color: Color(0xFF14C38E))
+                                : null,
+                            onTap: () {
+                              setSheetState(() {
+                                if (entry.key == 'All') {
+                                  // ✅ bấm All → chỉ chọn All, bỏ hết cái khác
+                                  tempSelected = {'All'};
+                                } else {
+                                  // ✅ bấm item khác → bỏ All, toggle item đó
+                                  tempSelected.remove('All');
+                                  if (isSelected) {
+                                    tempSelected.remove(entry.key);
+                                  } else {
+                                    tempSelected.add(entry.key);
+                                  }
+                                  // ✅ nếu bỏ hết thì tự động về All
+                                  if (tempSelected.isEmpty) {
+                                    tempSelected = {'All'};
+                                  }
+                                }
+                              });
+                            },
+                          );
+                        }).toList();
+                      })(),
+                    ),
+                  ),
                   const SizedBox(height: 16),
                 ],
               );

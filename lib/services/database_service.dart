@@ -30,13 +30,14 @@ class DatabaseService {
     final path = join(dbPath, 'transactions.db');
     return await openDatabase(
       path,
-      version: 7,
+      version: 9,
       onCreate: (db, version) async {
         await _createTransactionTable(db);
         await _createSyncedEmailsTable(db);
         await _createAppSettingsTable(db);
         await _createCategoryTable(db);
         await _seedDefaultCategories(db);
+        await _createSavingExpenditureTable(db);
       },
       onUpgrade: (db, oldVersion, newVersion) async {
         if (oldVersion < 2) {
@@ -100,6 +101,19 @@ class DatabaseService {
             debugPrint('Migration v7 failed: $e');
           }
         }
+        if (oldVersion < 8) {
+          await _createSavingExpenditureTable(db);
+        }
+        if (oldVersion < 9) {
+          try {
+            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN associated_categories TEXT");
+            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN start_date TEXT");
+            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN end_date TEXT");
+            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN loopable INTEGER NOT NULL DEFAULT 0");
+          } catch (e) {
+            // Table might not exist or columns might already exist
+          }
+        }
       },
     );
   }
@@ -153,6 +167,25 @@ class DatabaseService {
         user_id TEXT NOT NULL,
         value TEXT NOT NULL,
         PRIMARY KEY (key, user_id)
+      )
+    ''');
+  }
+
+  //tao db saving_expenditure
+  Future<void> _createSavingExpenditureTable(Database db) async {
+    await db.execute('''
+      CREATE TABLE saving_expenditure (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id TEXT NOT NULL,
+        type INTEGER NOT NULL CHECK(type IN (0, 1)),
+        title TEXT NOT NULL,
+        icon_code INTEGER NOT NULL,
+        value INTEGER NOT NULL DEFAULT 0,
+        current_value INTEGER NOT NULL DEFAULT 0,
+        associated_categories TEXT,
+        start_date TEXT,
+        end_date TEXT,
+        loopable INTEGER NOT NULL DEFAULT 0
       )
     ''');
   }
@@ -662,5 +695,55 @@ class DatabaseService {
 
     final iconCode = maps.first['icon_code'] as int;
     return IconData(iconCode, fontFamily: 'MaterialIcons');
+  }
+
+  // ─── Saving & Expenditure Items Helper Methods ──────────────────────────
+
+  Future<List<Map<String, dynamic>>> getSavingExpenditureItems({int? type}) async {
+    final db = await database;
+    final userId = currentUserId;
+    if (type != null) {
+      return await db.query(
+        'saving_expenditure',
+        where: 'user_id = ? AND type = ?',
+        whereArgs: [userId, type],
+        orderBy: 'id DESC',
+      );
+    }
+    return await db.query(
+      'saving_expenditure',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+      orderBy: 'id DESC',
+    );
+  }
+
+  Future<int> insertSavingExpenditureItem(Map<String, dynamic> item) async {
+    final db = await database;
+    final map = Map<String, dynamic>.from(item);
+    map['user_id'] = currentUserId;
+    return await db.insert('saving_expenditure', map);
+  }
+
+  Future<int> updateSavingExpenditureItem(Map<String, dynamic> item) async {
+    final db = await database;
+    final id = item['id'];
+    final map = Map<String, dynamic>.from(item);
+    map.remove('id');
+    return await db.update(
+      'saving_expenditure',
+      map,
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, currentUserId],
+    );
+  }
+
+  Future<int> deleteSavingExpenditureItem(int id) async {
+    final db = await database;
+    return await db.delete(
+      'saving_expenditure',
+      where: 'id = ? AND user_id = ?',
+      whereArgs: [id, currentUserId],
+    );
   }
 }
