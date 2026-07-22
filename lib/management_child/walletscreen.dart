@@ -1,3 +1,4 @@
+import 'package:a_management/management_child/expenditure_edit_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:a_management/services/database_service.dart';
 import 'package:a_management/widget/widget.dart';
@@ -14,6 +15,7 @@ class WalletScreen extends StatefulWidget {
 class _WalletScreenState extends State<WalletScreen> {
   final DatabaseService _db = DatabaseService();
   bool _isSaving = true; // true for Saving, false for Expense
+  Key _budgetKey = UniqueKey();
 
   // Global Metrics
   double _asset = 0.0;
@@ -36,13 +38,17 @@ class _WalletScreenState extends State<WalletScreen> {
       _isLoading = true;
     });
 
-    final liabilitiesStr = await _db.getSetting('wallet_global_liabilities') ?? 
-                           await _db.getSetting('wallet_saving_liabilities') ?? '0.0';
-    final netWorthStr = await _db.getSetting('wallet_global_net_worth') ?? 
-                        await _db.getSetting('wallet_saving_net_worth') ?? '0.0';
+    final liabilitiesStr = await _db.getSetting('wallet_global_liabilities') ??
+        await _db.getSetting('wallet_saving_liabilities') ??
+        '0.0';
+    final netWorthStr = await _db.getSetting('wallet_global_net_worth') ??
+        await _db.getSetting('wallet_saving_net_worth') ??
+        '0.0';
 
-    final savingBalanceStr = await _db.getSetting('wallet_saving_balance') ?? '0.0';
-    final expenditureBalanceStr = await _db.getSetting('wallet_expenditure_balance') ?? '0.0';
+    final savingBalanceStr =
+        await _db.getSetting('wallet_saving_balance') ?? '0.0';
+    final expenditureBalanceStr =
+        await _db.getSetting('wallet_expenditure_balance') ?? '0.0';
 
     setState(() {
       _liabilities = double.tryParse(liabilitiesStr) ?? 0.0;
@@ -325,11 +331,10 @@ class _WalletScreenState extends State<WalletScreen> {
     );
   }
 
-
-
   Widget _buildMainWalletInfoSection() {
     final walletName = _isSaving ? 'Saving Wallet' : 'Expenditure Wallet';
-    final balance = _isSaving ? _savingWalletBalance : _expenditureWalletBalance;
+    final balance =
+        _isSaving ? _savingWalletBalance : _expenditureWalletBalance;
 
     return Container(
       width: double.infinity,
@@ -364,12 +369,14 @@ class _WalletScreenState extends State<WalletScreen> {
                 IconButton(
                   padding: EdgeInsets.zero,
                   constraints: const BoxConstraints(),
-                  icon: const Icon(Icons.edit, color: Color(0xFF00C18A), size: 22),
+                  icon: const Icon(Icons.edit,
+                      color: Color(0xFF00C18A), size: 22),
                   onPressed: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ExpenditureManagementScreen(),
+                        builder: (context) =>
+                            const ExpenditureManagementScreen(),
                       ),
                     ).then((_) => _loadWalletValues());
                   },
@@ -407,12 +414,15 @@ class _WalletScreenState extends State<WalletScreen> {
               ElevatedButton.icon(
                 onPressed: _showEditWalletBalanceDialog,
                 icon: const Icon(Icons.edit, size: 14, color: Colors.white),
-                label: const Text('Edit Balance', style: TextStyle(fontSize: 12, color: Colors.white)),
+                label: const Text('Edit Balance',
+                    style: TextStyle(fontSize: 12, color: Colors.white)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF00C18A),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10)),
                   elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 ),
               ),
             ],
@@ -424,14 +434,17 @@ class _WalletScreenState extends State<WalletScreen> {
 
   void _showEditWalletBalanceDialog() {
     final type = _isSaving ? 'saving' : 'expenditure';
-    final currentVal = _isSaving ? _savingWalletBalance : _expenditureWalletBalance;
-    final controller = TextEditingController(text: currentVal == 0.0 ? '' : currentVal.toString());
+    final currentVal =
+        _isSaving ? _savingWalletBalance : _expenditureWalletBalance;
+    final controller = TextEditingController(
+        text: currentVal == 0.0 ? '' : currentVal.toString());
 
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
           title: Text(
             'Edit ${_isSaving ? "Saving" : "Expenditure"} Balance',
             style: const TextStyle(fontWeight: FontWeight.bold),
@@ -441,16 +454,19 @@ class _WalletScreenState extends State<WalletScreen> {
             children: [
               TextField(
                 controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType:
+                    const TextInputType.numberWithOptions(decimal: true),
                 autofocus: true,
                 decoration: InputDecoration(
                   labelText: 'Balance',
                   hintText: 'Enter balance amount',
                   prefixText: '\$ ',
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
+                  border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(16)),
                   focusedBorder: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(16),
-                    borderSide: const BorderSide(color: Color(0xFF00C18A), width: 2),
+                    borderSide:
+                        const BorderSide(color: Color(0xFF00C18A), width: 2),
                   ),
                 ),
               ),
@@ -459,30 +475,35 @@ class _WalletScreenState extends State<WalletScreen> {
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel', style: TextStyle(color: Colors.grey, fontWeight: FontWeight.w600)),
+              child: const Text('Cancel',
+                  style: TextStyle(
+                      color: Colors.grey, fontWeight: FontWeight.w600)),
             ),
             ElevatedButton(
               onPressed: () async {
                 final newValue = double.tryParse(controller.text) ?? 0.0;
-                await _db.saveSetting('wallet_${type}_balance', newValue.toString());
+                await _db.saveSetting(
+                    'wallet_${type}_balance', newValue.toString());
                 if (!context.mounted) return;
                 Navigator.pop(context);
                 _loadWalletValues();
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: const Color(0xFF00C18A),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
               ),
-              child: const Text('Save', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Save',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ],
         );
       },
     );
   }
-
-
 
   @override
   Widget build(BuildContext context) {
@@ -541,9 +562,22 @@ class _WalletScreenState extends State<WalletScreen> {
                           const SizedBox(height: 28),
                           if (!_isSaving) ...[
                             DisplayBudget(
+                              key: _budgetKey,
                               physics: const NeverScrollableScrollPhysics(),
                               shrinkWrap: true,
-                              onTap: () {},
+                              onTap: (budget, spentAmount) {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) => ExpenditureEditScreen(
+                                      budget: budget,
+                                      spentAmount: spentAmount,
+                                    ),
+                                  ),
+                                ).then((_) => setState(() {
+                                  _budgetKey = UniqueKey();
+                                }));
+                              },
                             ),
                           ],
                         ],

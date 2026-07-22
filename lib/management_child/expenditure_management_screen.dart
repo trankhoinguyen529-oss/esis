@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:a_management/management_child/add_expenditure_screen.dart';
+import 'package:a_management/management_child/expenditure_edit_screen.dart';
 import 'package:a_management/widget/widget.dart';
 
 class ExpenditureManagementScreen extends StatefulWidget {
@@ -51,9 +52,20 @@ class _ExpenditureManagementScreenState extends State<ExpenditureManagementScree
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: DisplayBudget(
           key: _displayKey,
-          onTap: () {},
+          onTap: (budget, spentAmount) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => ExpenditureEditScreen(
+                  budget: budget,
+                  spentAmount: spentAmount,
+                ),
+              ),
+            ).then((_) => _refresh());
+          },
         ),
       ),
     );
   }
 }
+

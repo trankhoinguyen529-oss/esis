@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:a_management/services/database_service.dart';
 
 class DisplayBudget extends StatefulWidget {
-  final VoidCallback? onTap;
+  final Function(Map<String, dynamic> budget, double spentAmount)? onTap;
   final ScrollPhysics? physics;
   final bool shrinkWrap;
 
@@ -180,7 +180,7 @@ class _DisplayBudgetState extends State<DisplayBudget> {
           ),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-            onTap: widget.onTap ?? () {},
+            onTap: widget.onTap != null ? () => widget.onTap!(budget, spentVal) : null,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               child: Row(
