@@ -1,8 +1,12 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:a_management/data/data_category.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import 'package:http/http.dart' as http;
 import '../data/data_transaction.dart';
 
 class DatabaseService {
@@ -17,6 +21,16 @@ class DatabaseService {
     final uid = FirebaseAuth.instance.currentUser?.uid;
     if (uid == null) throw StateError('No user is currently logged in.');
     return uid;
+  }
+
+  String get backendBaseUrl {
+    if (kIsWeb) {
+      return 'http://localhost:8080';
+    }
+    if (Platform.isAndroid) {
+      return 'http://10.0.2.2:8080';
+    }
+    return 'http://localhost:8080';
   }
 
   Future<Database> get database async {
@@ -106,10 +120,14 @@ class DatabaseService {
         }
         if (oldVersion < 9) {
           try {
-            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN associated_categories TEXT");
-            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN start_date TEXT");
-            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN end_date TEXT");
-            await db.execute("ALTER TABLE saving_expenditure ADD COLUMN loopable INTEGER NOT NULL DEFAULT 0");
+            await db.execute(
+                "ALTER TABLE saving_expenditure ADD COLUMN associated_categories TEXT");
+            await db.execute(
+                "ALTER TABLE saving_expenditure ADD COLUMN start_date TEXT");
+            await db.execute(
+                "ALTER TABLE saving_expenditure ADD COLUMN end_date TEXT");
+            await db.execute(
+                "ALTER TABLE saving_expenditure ADD COLUMN loopable INTEGER NOT NULL DEFAULT 0");
           } catch (e) {
             // Table might not exist or columns might already exist
           }
@@ -192,72 +210,131 @@ class DatabaseService {
 
   // ─── Transaction ────────────────────────────────────────────────────
 
-  /// Thêm giao dịch mới vào DB (tự gắn user_id hiện tại)
+  /// Thêm giao dịch mới vào DB (gửi lên API Spring Boot)
   Future<int> insertTransaction(TransactionItem item) async {
-    final db = await database;
-    final map = item.toMap();
-    map['user_id'] = currentUserId;
-    final id = await db.insert('transactions', map);
-    // In lại toàn bộ bảng sau mỗi lần thêm để debug
-    await printAllTransactions();
-    return id;
+    try {
+      final response = await http.post(
+        Uri.parse('$backendBaseUrl/api/v1/transactions'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': currentUserId,
+          'title': item.title,
+          'category': item.category,
+          'amount': item.amount,
+          'isExpense': item.isExpense,
+          'isBank': item.isBank,
+          'date': item.date.toIso8601String(),
+          'time': item.time,
+        }),
+      );
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data['id'] as int;
+      } else {
+        throw Exception(
+            'Failed to insert transaction on server (Status: ${response.statusCode})');
+      }
+    } catch (e) {
+      debugPrint('Error inserting transaction: $e');
+      rethrow;
+    }
   }
 
-  // Xoá giao dịch trong DB của user hiện tại theo ID giao dich
+  // Xoá giao dịch theo ID giao dich trên API Spring Boot
   Future<int?> deleteTransaction(int? id) async {
-    final db = await database;
-    await db.delete(
-      'transactions', // tên bảng
-      where: 'id = ?', // điều kiện
-      whereArgs: [id], // giá trị thay vào ?
-    );
-    // In lại toàn bộ bảng sau mỗi lần thêm để debug
-    await printAllTransactions();
-    return id;
+    if (id == null) return null;
+    try {
+      final response = await http.delete(
+        Uri.parse(
+            '$backendBaseUrl/api/v1/transactions/$id?userId=$currentUserId'),
+      );
+      if (response.statusCode == 200) {
+        return id;
+      } else {
+        throw Exception(
+            'Failed to delete transaction on server (Status: ${response.statusCode})');
+      }
+    } catch (e) {
+      debugPrint('Error deleting transaction: $e');
+      rethrow;
+    }
   }
 
-  /// Cập nhật giao dịch hiện tại theo id và user hiện tại
+  /// Cập nhật giao dịch hiện tại theo id trên API Spring Boot
   Future<int> updateTransaction(TransactionItem item) async {
     if (item.id == null) {
       throw ArgumentError.value(
           item, 'item', 'Transaction id must not be null');
     }
-    final db = await database;
-    final map = item.toMap();
-    map['user_id'] = currentUserId;
-    final count = await db.update(
-      'transactions',
-      map,
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [item.id, currentUserId],
-    );
-    await printAllTransactions();
-    return count;
+    try {
+      final response = await http.put(
+        Uri.parse('$backendBaseUrl/api/v1/transactions/${item.id}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': item.id,
+          'userId': currentUserId,
+          'title': item.title,
+          'category': item.category,
+          'amount': item.amount,
+          'isExpense': item.isExpense,
+          'isBank': item.isBank,
+          'date': item.date.toIso8601String(),
+          'time': item.time,
+        }),
+      );
+      if (response.statusCode == 200) {
+        return 1;
+      } else {
+        throw Exception(
+            'Failed to update transaction on server (Status: ${response.statusCode})');
+      }
+    } catch (e) {
+      debugPrint('Error updating transaction: $e');
+      rethrow;
+    }
   }
 
-  /// Lấy tất cả giao dịch của user hiện tại
+  /// Lấy tất cả giao dịch của user hiện tại từ API Spring Boot
   Future<List<TransactionItem>> getAllTransactions() async {
-    final db = await database;
-    final maps = await db.query(
-      'transactions',
-      where: 'user_id = ?',
-      whereArgs: [currentUserId],
-      orderBy: 'date DESC, time DESC',
-    );
-    return maps.map((m) => TransactionItem.fromMap(m)).toList();
+    try {
+      final response = await http.get(
+        Uri.parse('$backendBaseUrl/api/v1/transactions?userId=$currentUserId'),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        return list
+            .map((m) => TransactionItem(
+                  id: m['id'] as int?,
+                  title: m['title'] as String,
+                  category: m['category'] as String,
+                  time: m['time'] as String,
+                  date: DateTime.parse(m['date'] as String),
+                  amount: (m['amount'] as num).toDouble(),
+                  isExpense: m['isExpense'] as bool? ?? true,
+                  isBank: m['isBank'] as bool? ?? false,
+                ))
+            .toList();
+      } else {
+        throw Exception(
+            'Failed to fetch transactions from server (Status: ${response.statusCode})');
+      }
+    } catch (e) {
+      debugPrint('Error fetching transactions: $e');
+      return [];
+    }
   }
 
-  /// Lấy giao dịch theo ID của user hiện tại
+  /// Lấy giao dịch theo ID của user hiện tại từ danh sách server
   Future<TransactionItem?> getTransactionItem_byID(int id) async {
-    final db = await database;
-    final maps = await db.query(
-      'transactions',
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [id, currentUserId],
-      limit: 1,
-    );
-    if (maps.isEmpty) return null;
-    return TransactionItem.fromMap(maps.first);
+    try {
+      final list = await getAllTransactions();
+      final matches = list.where((t) => t.id == id);
+      if (matches.isEmpty) return null;
+      return matches.first;
+    } catch (e) {
+      debugPrint('Error getting transaction by ID: $e');
+      return null;
+    }
   }
 
   /// Lấy giao dịch theo kỳ: 0=Daily, 1=Weekly, 2=Monthly
@@ -292,7 +369,8 @@ class DatabaseService {
 
     final start = DateTime(dateFrom.year, dateFrom.month, dateFrom.day);
     final end = DateTime(dateTo.year, dateTo.month, dateTo.day);
-    final categoriesLower = categories.map((c) => c.trim().toLowerCase()).toSet();
+    final categoriesLower =
+        categories.map((c) => c.trim().toLowerCase()).toSet();
 
     return all.where((item) {
       final itemDate = DateTime(item.date.year, item.date.month, item.date.day);
@@ -391,49 +469,50 @@ class DatabaseService {
   // DEBUG ONLY – in toàn bộ bảng transactions ra console
   // ─────────────────────────────────────────────
   Future<void> printAllTransactions() async {
-    final db = await database;
+    try {
+      final list = await getAllTransactions();
 
-    // Lấy raw rows (tất cả user) để thấy đầy đủ khi debug
-    final rows = await db.query('transactions', orderBy: 'id ASC');
+      if (list.isEmpty) {
+        // ignore: avoid_print
+        print('══════════════════════════════════════════════');
+        // ignore: avoid_print
+        print('📋 [DB/Server] Bảng transactions: TRỐNG');
+        // ignore: avoid_print
+        print('══════════════════════════════════════════════');
+        return;
+      }
 
-    if (rows.isEmpty) {
       // ignore: avoid_print
-      print('══════════════════════════════════════════════');
+      print('\n══════════════════════════════════════════════');
       // ignore: avoid_print
-      print('📋 [DB] Bảng transactions: TRỐNG');
+      print('📋 [DB/Server] Bảng transactions – ${list.length} bản ghi');
       // ignore: avoid_print
-      print('══════════════════════════════════════════════');
-      return;
+      print('──────────────────────────────────────────────');
+
+      for (final item in list) {
+        final typeIcon = item.isExpense ? '🔴 Chi tiêu' : '🟢 Thu nhập';
+        final uid = currentUserId;
+        final shortUid = uid.length > 8 ? '${uid.substring(0, 8)}…' : uid;
+        // ignore: avoid_print
+        print(
+          'ID: ${item.id}'
+          ' | user: $shortUid'
+          ' | ${item.title}'
+          ' (${item.category})'
+          ' | $typeIcon'
+          ' | \$${item.amount.toStringAsFixed(2)}'
+          ' | ${item.date.toIso8601String().substring(0, 10)}'
+          ' ${item.time}'
+          ' | 🏦 ${item.isBank ? 'Bank' : 'Manual'}',
+        );
+      }
+
+      // ignore: avoid_print
+      print('══════════════════════════════════════════════\n');
+    } catch (e) {
+      // ignore: avoid_print
+      print('Error printing transactions from server: $e');
     }
-
-    // ignore: avoid_print
-    print('\n══════════════════════════════════════════════');
-    // ignore: avoid_print
-    print('📋 [DB] Bảng transactions – ${rows.length} bản ghi');
-    // ignore: avoid_print
-    print('──────────────────────────────────────────────');
-
-    for (final row in rows) {
-      final isExpense = (row['is_expense'] as int) == 1;
-      final typeIcon = isExpense ? '🔴 Chi tiêu' : '🟢 Thu nhập';
-      final uid = (row['user_id'] as String);
-      final shortUid = uid.length > 8 ? '${uid.substring(0, 8)}…' : uid;
-      // ignore: avoid_print
-      print(
-        'ID: ${row['id']}'
-        ' | user: $shortUid'
-        ' | ${row['title']}'
-        ' (${row['category']})'
-        ' | $typeIcon'
-        ' | \$${(row['amount'] as num).toStringAsFixed(2)}'
-        ' | ${(row['date'] as String).substring(0, 10)}'
-        ' ${row['time']}'
-        ' | 🏦 ${(row['is_bank'] as int?) == 1 ? 'Bank' : 'Manual'}', // ✅ thêm vào đây
-      );
-    }
-
-    // ignore: avoid_print
-    print('══════════════════════════════════════════════\n');
   }
 
   // ─── Synced Emails Helper ──────────────────────────────────
@@ -535,92 +614,94 @@ class DatabaseService {
 
   /// Thêm category mới vào DB (tự gắn user_id hiện tại)
   Future<int> insertCategory(CategoryItem item) async {
-    final db = await database;
-    final map = item.toMap();
-    map['user_id'] = currentUserId;
-    // kiểm tra trùng title trong user hiện tại hoặc category mặc định (user_id = '0')
-    final existing = await db.rawQuery(
-      'SELECT id FROM category WHERE LOWER(title) = LOWER(?) AND (user_id = ? OR user_id = ? ) LIMIT 1',
-      [item.title, currentUserId, '0'],
-    );
-    if (existing.isNotEmpty) {
-      throw Exception('Title already used');
+    try {
+      final response = await http.post(
+        Uri.parse('$backendBaseUrl/api/v1/categories'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': currentUserId,
+          'title': item.title,
+          'iconCode': item.icon.codePoint,
+        }),
+      );
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data['id'] as int;
+      } else if (response.statusCode == 409) {
+        throw Exception('Title already used');
+      } else {
+        throw Exception('Failed to insert category on server');
+      }
+    } catch (e) {
+      debugPrint('Error inserting category: $e');
+      rethrow;
     }
-
-    final id = await db.insert('category', map);
-    // In lại toàn bộ bảng sau mỗi lần thêm để debug
-    await printAllTransactions();
-    return id;
   }
 
   /// Trả về id của category có `title` thuộc user hiện tại.
   /// Nếu không tìm thấy, trả về -1.
   Future<int> getCategoryId(String title) async {
-    final db = await database;
-    final maps = await db.query(
-      'category',
-      where: 'title = ? AND user_id = ?',
-      whereArgs: [title, currentUserId],
-      limit: 1,
-    );
-    if (maps.isEmpty) return -1;
-    return maps.first['id'] as int;
+    try {
+      final cats = await getCategory();
+      final match = cats.firstWhere((c) => c.title.toLowerCase() == title.toLowerCase());
+      return match.id ?? -1;
+    } catch (e) {
+      return -1;
+    }
   }
 
   /// Sửa title và icon cho category theo id của user hiện tại.
   /// Cũng sẽ cập nhật tất cả transactions có category cũ sang title mới.
   Future<int> editCategory(int id,
       {required String title, required IconData icon}) async {
-    final db = await database;
     final trimmedTitle = title.trim();
     if (trimmedTitle.isEmpty) {
       throw ArgumentError('Title cannot be empty');
     }
 
-    // Lấy category cũ để biết old title
-    final oldCategory = await db.query(
-      'category',
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [id, currentUserId],
-      limit: 1,
-    );
-    if (oldCategory.isEmpty) {
+    // 1. Lấy category cũ để biết old title
+    String oldTitle = '';
+    try {
+      final cats = await getCategory();
+      final match = cats.firstWhere((c) => c.id == id);
+      oldTitle = match.title;
+    } catch (e) {
       throw StateError('Category not found');
     }
-    final oldTitle = oldCategory.first['title'] as String;
 
-    // Kiểm tra title trùng
-    final existing = await db.rawQuery(
-      'SELECT id FROM category WHERE LOWER(title) = LOWER(?) AND id != ? AND (user_id = ? OR user_id = ? ) LIMIT 1',
-      [trimmedTitle, id, currentUserId, '0'],
-    );
-    if (existing.isNotEmpty) {
-      throw Exception('Title alradey used');
-    }
-
-    // Update category
-    final count = await db.update(
-      'category',
-      {
-        'title': trimmedTitle,
-        'icon_code': icon.codePoint,
-      },
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [id, currentUserId],
-    );
-
-    // Update tất cả transactions có category cũ sang title mới
-    if (oldTitle != trimmedTitle) {
-      await db.update(
-        'transactions',
-        {'category': trimmedTitle},
-        where: 'category = ? AND user_id = ?',
-        whereArgs: [oldTitle, currentUserId],
+    // 2. Cập nhật category lên server
+    try {
+      final response = await http.put(
+        Uri.parse('$backendBaseUrl/api/v1/categories/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': id,
+          'userId': currentUserId,
+          'title': trimmedTitle,
+          'iconCode': icon.codePoint,
+        }),
       );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update category on server');
+      }
+    } catch (e) {
+      debugPrint('Error updating category: $e');
+      rethrow;
     }
 
-    await printAllTransactions();
-    return count;
+    // 3. Update tất cả transactions có category cũ sang title mới
+    if (oldTitle != trimmedTitle) {
+      try {
+        await http.put(
+          Uri.parse(
+              '$backendBaseUrl/api/v1/transactions/categories?userId=$currentUserId&oldCategory=${Uri.encodeComponent(oldTitle)}&newCategory=${Uri.encodeComponent(trimmedTitle)}'),
+        );
+      } catch (e) {
+        debugPrint('Error updating transaction categories on server: $e');
+      }
+    }
+
+    return 1;
   }
 
   /// Xoá toàn bộ category của user không phải user mặc định (user_id != '0')
@@ -643,14 +724,25 @@ class DatabaseService {
 
   /// Lấy category theo ID của user hiện tại
   Future<List<CategoryItem>> getCategory() async {
-    final db = await database;
-    final maps = await db.query(
-      'category',
-      where: 'user_id = ? OR user_id = ?',
-      whereArgs: [0, currentUserId],
-      orderBy: 'id ASC',
-    );
-    return maps.map((m) => CategoryItem.fromMap(m)).toList();
+    try {
+      final response = await http.get(
+        Uri.parse('$backendBaseUrl/api/v1/categories?userId=$currentUserId'),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        return list.map((m) => CategoryItem(
+          id: m['id'] as int?,
+          userId: m['userId'] as String? ?? currentUserId,
+          title: m['title'] as String,
+          icon: IconData(m['iconCode'] as int, fontFamily: 'MaterialIcons'),
+        )).toList();
+      } else {
+        throw Exception('Failed to fetch categories from server');
+      }
+    } catch (e) {
+      debugPrint('Error getting categories: $e');
+      return [];
+    }
   }
 
   // Xoá category trong DB của user hiện tại theo ID giao dich
@@ -660,66 +752,75 @@ class DatabaseService {
     String? userId,
   }) async {
     if (id == null) return null;
-
-    final db = await database;
     final effectiveUserId = userId ?? currentUserId;
 
-    final existingCategory = await db.query(
-      'category',
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [id, effectiveUserId],
-      limit: 1,
-    );
+    final oldCategory = await getCategory().then((cats) => cats.firstWhere((c) => c.id == id));
+    final oldTitle = oldCategory.title;
 
-    if (existingCategory.isEmpty) {
-      throw StateError('Category not found');
+    try {
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/api/v1/categories/$id?userId=$effectiveUserId'),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete category on server');
+      }
+    } catch (e) {
+      debugPrint('Error deleting category: $e');
+      rethrow;
     }
 
-    final oldTitle = existingCategory.first['title'] as String;
+    try {
+      await http.put(
+        Uri.parse(
+            '$backendBaseUrl/api/v1/transactions/categories?userId=$effectiveUserId&oldCategory=${Uri.encodeComponent(oldTitle)}&newCategory=${Uri.encodeComponent(replacementCategory)}'),
+      );
+    } catch (e) {
+      debugPrint(
+          'Error updating transaction categories on delete on server: $e');
+    }
 
-    await db.update(
-      'transactions',
-      {'category': replacementCategory},
-      where: 'category = ? AND user_id = ?',
-      whereArgs: [oldTitle, effectiveUserId],
-    );
-
-    await db.delete(
-      'category',
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [id, effectiveUserId],
-    );
-
-    await printAllTransactions();
     return id;
   }
 
   // Lấy Icon của khi biết title và userID
   Future<IconData> getCategoryIcon(String title) async {
-    final db = await database;
-    final maps = await db.query(
-      'category',
-      where: 'title = ? AND (user_id = ? OR user_id = ?)',
-      whereArgs: [title, currentUserId, '0'],
-      limit: 1,
-    );
-
-    final iconCode = maps.first['icon_code'] as int;
-    return IconData(iconCode, fontFamily: 'MaterialIcons');
+    try {
+      final cats = await getCategory();
+      final match = cats.firstWhere((c) => c.title.toLowerCase() == title.toLowerCase());
+      return match.icon;
+    } catch (e) {
+      return Icons.more_horiz;
+    }
   }
 
   // ─── Saving & Expenditure Items Helper Methods ──────────────────────────
 
   Future<void> _checkAndProcessExpiredBudgets() async {
-    final db = await database;
     final userId = currentUserId;
 
-    // Fetch all saving_expenditure items for this user
-    final items = await db.query(
-      'saving_expenditure',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-    );
+    List<Map<String, dynamic>> items = [];
+    try {
+      final response = await http.get(Uri.parse('$backendBaseUrl/api/v1/saving-expenditures?userId=$userId'));
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        items = list.map((m) => {
+          'id': m['id'] as int?,
+          'user_id': m['userId'] as String,
+          'type': m['type'] as int,
+          'title': m['title'] as String,
+          'icon_code': m['iconCode'] as int,
+          'value': m['value'] as int,
+          'current_value': m['currentValue'] as int,
+          'associated_categories': m['associatedCategories'] as String?,
+          'start_date': m['startDate'] as String?,
+          'end_date': m['endDate'] as String?,
+          'loopable': (m['loopable'] as bool) ? 1 : 0,
+        }).toList();
+      }
+    } catch (e) {
+      debugPrint('Error fetching in _checkAndProcessExpiredBudgets: $e');
+      return;
+    }
 
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
@@ -741,14 +842,16 @@ class DatabaseService {
           // Calculate new dates
           final startDateStr = item['start_date'] as String? ?? '';
           final startDate = DateTime.tryParse(startDateStr) ?? DateTime.now();
-          final start = DateTime(startDate.year, startDate.month, startDate.day);
+          final start =
+              DateTime(startDate.year, startDate.month, startDate.day);
 
           int days = targetEnd.difference(start).inDays;
           if (days < 0) days = 30; // fallback
 
           DateTime newStart = start;
           DateTime newEnd = targetEnd;
-          while (!newEnd.isAfter(today) && !DateUtils.isSameDay(newEnd, today)) {
+          while (
+              !newEnd.isAfter(today) && !DateUtils.isSameDay(newEnd, today)) {
             newStart = newEnd.add(const Duration(days: 1));
             newEnd = newStart.add(Duration(days: days));
           }
@@ -768,65 +871,122 @@ class DatabaseService {
           };
 
           // Insert the new budget
-          await db.insert('saving_expenditure', newBudget);
+          await insertSavingExpenditureItem(newBudget);
         }
 
         // Delete the expired budget
-        await db.delete(
-          'saving_expenditure',
-          where: 'id = ? AND user_id = ?',
-          whereArgs: [id, userId],
-        );
+        await deleteSavingExpenditureItem(id);
       }
     }
   }
 
-  Future<List<Map<String, dynamic>>> getSavingExpenditureItems({int? type}) async {
+  Future<List<Map<String, dynamic>>> getSavingExpenditureItems(
+      {int? type}) async {
     await _checkAndProcessExpiredBudgets();
-    final db = await database;
-    final userId = currentUserId;
-    if (type != null) {
-      return await db.query(
-        'saving_expenditure',
-        where: 'user_id = ? AND type = ?',
-        whereArgs: [userId, type],
-        orderBy: 'id DESC',
-      );
+    try {
+      String url = '$backendBaseUrl/api/v1/saving-expenditures?userId=$currentUserId';
+      if (type != null) {
+        url += '&type=$type';
+      }
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        return list.map((m) => {
+          'id': m['id'] as int?,
+          'user_id': m['userId'] as String,
+          'type': m['type'] as int,
+          'title': m['title'] as String,
+          'icon_code': m['iconCode'] as int,
+          'value': m['value'] as int,
+          'current_value': m['currentValue'] as int,
+          'associated_categories': m['associatedCategories'] as String?,
+          'start_date': m['startDate'] as String?,
+          'end_date': m['endDate'] as String?,
+          'loopable': (m['loopable'] as bool) ? 1 : 0,
+        }).toList();
+      } else {
+        throw Exception('Failed to fetch saving expenditure items from server');
+      }
+    } catch (e) {
+      debugPrint('Error getting saving expenditure items: $e');
+      return [];
     }
-    return await db.query(
-      'saving_expenditure',
-      where: 'user_id = ?',
-      whereArgs: [userId],
-      orderBy: 'id DESC',
-    );
   }
 
   Future<int> insertSavingExpenditureItem(Map<String, dynamic> item) async {
-    final db = await database;
-    final map = Map<String, dynamic>.from(item);
-    map['user_id'] = currentUserId;
-    return await db.insert('saving_expenditure', map);
+    try {
+      final response = await http.post(
+        Uri.parse('$backendBaseUrl/api/v1/saving-expenditures'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'userId': currentUserId,
+          'type': item['type'],
+          'title': item['title'],
+          'iconCode': item['icon_code'],
+          'value': item['value'],
+          'currentValue': item['current_value'] ?? 0,
+          'associatedCategories': item['associated_categories'],
+          'startDate': item['start_date'],
+          'endDate': item['end_date'],
+          'loopable': (item['loopable'] == 1 || item['loopable'] == true),
+        }),
+      );
+      if (response.statusCode == 201) {
+        final data = jsonDecode(response.body);
+        return data['id'] as int;
+      } else {
+        throw Exception('Failed to insert saving expenditure item on server');
+      }
+    } catch (e) {
+      debugPrint('Error inserting saving expenditure item: $e');
+      rethrow;
+    }
   }
 
   Future<int> updateSavingExpenditureItem(Map<String, dynamic> item) async {
-    final db = await database;
     final id = item['id'];
-    final map = Map<String, dynamic>.from(item);
-    map.remove('id');
-    return await db.update(
-      'saving_expenditure',
-      map,
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [id, currentUserId],
-    );
+    try {
+      final response = await http.put(
+        Uri.parse('$backendBaseUrl/api/v1/saving-expenditures/$id'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'id': id,
+          'userId': currentUserId,
+          'type': item['type'],
+          'title': item['title'],
+          'iconCode': item['icon_code'],
+          'value': item['value'],
+          'currentValue': item['current_value'],
+          'associatedCategories': item['associated_categories'],
+          'startDate': item['start_date'],
+          'endDate': item['end_date'],
+          'loopable': (item['loopable'] == 1 || item['loopable'] == true),
+        }),
+      );
+      if (response.statusCode == 200) {
+        return 1;
+      } else {
+        throw Exception('Failed to update saving expenditure item on server');
+      }
+    } catch (e) {
+      debugPrint('Error updating saving expenditure item: $e');
+      rethrow;
+    }
   }
 
   Future<int> deleteSavingExpenditureItem(int id) async {
-    final db = await database;
-    return await db.delete(
-      'saving_expenditure',
-      where: 'id = ? AND user_id = ?',
-      whereArgs: [id, currentUserId],
-    );
+    try {
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/api/v1/saving-expenditures/$id?userId=$currentUserId'),
+      );
+      if (response.statusCode == 200) {
+        return 1;
+      } else {
+        throw Exception('Failed to delete saving expenditure item on server');
+      }
+    } catch (e) {
+      debugPrint('Error deleting saving expenditure item: $e');
+      rethrow;
+    }
   }
 }
