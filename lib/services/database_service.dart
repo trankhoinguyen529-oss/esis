@@ -289,14 +289,25 @@ class DatabaseService {
     final all = await getAllTransactions();
     bool isExpense = (type == 'Expense') ? true : false;
     bool isBank = (bank == 'Bank') ? true : false;
+
+    final start = DateTime(dateFrom.year, dateFrom.month, dateFrom.day);
+    final end = DateTime(dateTo.year, dateTo.month, dateTo.day);
+    final categoriesLower = categories.map((c) => c.trim().toLowerCase()).toSet();
+
     return all.where((item) {
+      final itemDate = DateTime(item.date.year, item.date.month, item.date.day);
+      final itemCategoryLower = item.category.trim().toLowerCase();
+
+      bool dateMatches = !itemDate.isBefore(start) && !itemDate.isAfter(end);
+      bool categoryMatches = categoriesLower.contains(itemCategoryLower) ||
+          categoriesLower.isEmpty ||
+          categoriesLower.contains('all');
+
       return ((item.title == title || title == '') &&
           (item.amount <= amountTo && item.amount >= amountFrom) &&
           (item.isExpense == isExpense || type == 'All') &&
-          (!(item.date).isBefore(dateFrom) && !(item.date).isAfter(dateTo)) &&
-          (categories.contains(item.category) ||
-              categories.isEmpty ||
-              categories.contains('All')) &&
+          dateMatches &&
+          categoryMatches &&
           (item.isBank == isBank || bank == 'All'));
     }).toList();
   }
@@ -699,7 +710,79 @@ class DatabaseService {
 
   // ─── Saving & Expenditure Items Helper Methods ──────────────────────────
 
+  Future<void> _checkAndProcessExpiredBudgets() async {
+    final db = await database;
+    final userId = currentUserId;
+
+    // Fetch all saving_expenditure items for this user
+    final items = await db.query(
+      'saving_expenditure',
+      where: 'user_id = ?',
+      whereArgs: [userId],
+    );
+
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+
+    for (final item in items) {
+      final endDateStr = item['end_date'] as String? ?? '';
+      if (endDateStr.isEmpty) continue;
+
+      final endDate = DateTime.tryParse(endDateStr);
+      if (endDate == null) continue;
+
+      final targetEnd = DateTime(endDate.year, endDate.month, endDate.day);
+      if (targetEnd.isBefore(today)) {
+        // Expired!
+        final id = item['id'] as int;
+        final loopable = (item['loopable'] as int? ?? 0) == 1;
+
+        if (loopable) {
+          // Calculate new dates
+          final startDateStr = item['start_date'] as String? ?? '';
+          final startDate = DateTime.tryParse(startDateStr) ?? DateTime.now();
+          final start = DateTime(startDate.year, startDate.month, startDate.day);
+
+          int days = targetEnd.difference(start).inDays;
+          if (days < 0) days = 30; // fallback
+
+          DateTime newStart = start;
+          DateTime newEnd = targetEnd;
+          while (!newEnd.isAfter(today) && !DateUtils.isSameDay(newEnd, today)) {
+            newStart = newEnd.add(const Duration(days: 1));
+            newEnd = newStart.add(Duration(days: days));
+          }
+
+          // Create new budget map
+          final newBudget = {
+            'user_id': userId,
+            'type': item['type'],
+            'title': item['title'],
+            'icon_code': item['icon_code'],
+            'value': item['value'],
+            'current_value': 0, // Reset spent amount for the new budget period
+            'associated_categories': item['associated_categories'],
+            'start_date': newStart.toIso8601String(),
+            'end_date': newEnd.toIso8601String(),
+            'loopable': 1,
+          };
+
+          // Insert the new budget
+          await db.insert('saving_expenditure', newBudget);
+        }
+
+        // Delete the expired budget
+        await db.delete(
+          'saving_expenditure',
+          where: 'id = ? AND user_id = ?',
+          whereArgs: [id, userId],
+        );
+      }
+    }
+  }
+
   Future<List<Map<String, dynamic>>> getSavingExpenditureItems({int? type}) async {
+    await _checkAndProcessExpiredBudgets();
     final db = await database;
     final userId = currentUserId;
     if (type != null) {

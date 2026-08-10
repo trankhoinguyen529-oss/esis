@@ -32,6 +32,7 @@ class EmailParserService {
         cleanFrom.contains('techcombank') ||
         cleanFrom.contains('mbbank') ||
         cleanFrom.contains('acb') ||
+        cleanFrom.contains('mbebanking') ||
         cleanFrom.contains('manh');
 
     if (!isFromBankOrTest) return null;
@@ -55,6 +56,7 @@ class EmailParserService {
         cleanBody.contains('tpbank') ||
         cleanBody.contains('techcombank') ||
         cleanBody.contains('mbbank') ||
+        cleanBody.contains('chuyen tien') ||
         cleanBody.contains('acb');
 
     if (!hasTransactionKeywords) return null;
@@ -77,8 +79,10 @@ class EmailParserService {
         cleanBody.contains('acb')) {
       bankName = 'ACB';
     } else if (cleanFrom.contains('mbbank') ||
+        cleanFrom.contains('mbebanking') ||
         cleanSubject.contains('mbbank') ||
-        cleanBody.contains('mb bank')) {
+        cleanBody.contains('mb bank') ||
+        cleanBody.contains('mb ebanking')) {
       bankName = 'MB Bank';
     }
 
@@ -94,7 +98,9 @@ class EmailParserService {
       isExpense = false;
     } else if (cleanBody.contains('-') ||
         cleanBody.contains('ghi no') ||
+        cleanBody.contains('trich no') ||
         cleanBody.contains('chuyen di') ||
+        cleanBody.contains('chuyen tien noi bo') ||
         cleanBody.contains('thanh toan') ||
         cleanBody.contains('rut tien')) {
       isExpense = true;
@@ -105,8 +111,10 @@ class EmailParserService {
     // Regex looking for numbers: optionally preceded by + or -, followed by digits/commas/dots, and followed by VND, đ, usd, $
     // E.g., +50,000 VND, -100.000đ, 5,000.00 USD, so tien gd: 200,000
     final amountRegExps = [
+      // MB Bank format: (VND) 50,000.00
+      RegExp(r'\(vnd\)\s*([0-9,.]+)'),
       RegExp(
-          r'(?:so tien gd|so tien|thay doi|[\+\-]\s*)([0-9,.]+)\s*(?:vnd|đ|usd|\$)'),
+          r'(?:so tien gd|so tien giao dich|so tien|thay doi|[\+\-]\s*)([0-9,.]+)\s*(?:vnd|đ|usd|\$)'),
       RegExp(r'(?:so tien|gd|thay doi):\s*([\+\-]?\s*[0-9,.]+)'),
       RegExp(r'([\+\-]?\s*[0-9,.,]+)\s*(?:vnd|đ|usd|\$)'),
       RegExp(r'([0-9,.]+)\s*(?:vnd|đ|usd|\$)'),
@@ -131,15 +139,8 @@ class EmailParserService {
       }
     }
 
-    // Convert VND to USD since the app shows transaction amounts in USD (exchange rate ~25,000)
-    // If the raw amount is large (e.g. > 1000) and contains 'vnd' or 'đ' keywords, convert it.
+    // Use raw amount directly (app now uses VND)
     double appAmount = rawAmount;
-    if (rawAmount > 1000 &&
-        (cleanBody.contains('vnd') ||
-            cleanBody.contains('đ') ||
-            cleanBody.contains('d'))) {
-      appAmount = rawAmount / 25000.0;
-    }
 
     // Reject transactions without any valid parsed positive amount
     if (appAmount <= 0) return null;
@@ -147,8 +148,9 @@ class EmailParserService {
     // 3. Parse Description / Content
     String description = '';
     final descRegExps = [
-      RegExp(r'(?:noi dung gd|noi dung|nd|mo ta|ly do):\s*([^.\n]+)'),
-      RegExp(r'(?:noi dung gd|noi dung|nd|mo ta|ly do)\s*([^.\n]+)'),
+      // MB Bank format: noi dung chuyen tien
+      RegExp(r'(?:noi dung chuyen tien|noi dung gd|noi dung|nd|mo ta|ly do):\s*([^.\n]+)'),
+      RegExp(r'(?:noi dung chuyen tien|noi dung gd|noi dung|nd|mo ta|ly do)\s+([^.\n]+)'),
       RegExp(r'gd\s+([^.\n]+)'),
     ];
 
