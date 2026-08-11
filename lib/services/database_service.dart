@@ -8,6 +8,7 @@ import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
 import '../data/data_transaction.dart';
+import '../data/user_account.dart';
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -742,6 +743,72 @@ class DatabaseService {
     } catch (e) {
       debugPrint('Error getting categories: $e');
       return [];
+    }
+  }
+
+  /// User Account CRUD Operations via REST API
+  Future<List<UserAccountItem>> getUserAccounts() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$backendBaseUrl/api/v1/user-accounts?userId=$currentUserId'),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        return list.map((m) => UserAccountItem.fromJson(m)).toList();
+      } else {
+        throw Exception('Failed to fetch user accounts: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error getting user accounts: $e');
+      rethrow;
+    }
+  }
+
+  Future<UserAccountItem> createUserAccount(UserAccountItem item) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$backendBaseUrl/api/v1/user-accounts'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(item.toJson()),
+      );
+      if (response.statusCode == 201) {
+        return UserAccountItem.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception('Failed to create user account: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error creating user account: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> updateUserAccount(UserAccountItem item) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$backendBaseUrl/api/v1/user-accounts/${item.id}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(item.toJson()),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to update user account: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error updating user account: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteUserAccount(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/api/v1/user-accounts/$id?userId=$currentUserId'),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete user account: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error deleting user account: $e');
+      rethrow;
     }
   }
 
