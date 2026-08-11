@@ -140,7 +140,7 @@ class DatabaseService {
   //tao db transaction
   Future<void> _createTransactionTable(Database db) async {
     await db.execute('''
-      CREATE TABLE transactions (
+      CREATE TABLE IF NOT EXISTS transactions (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         title TEXT NOT NULL,
@@ -157,7 +157,7 @@ class DatabaseService {
   //tao db category
   Future<void> _createCategoryTable(Database db) async {
     await db.execute('''
-      CREATE TABLE category (
+      CREATE TABLE IF NOT EXISTS category (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         title TEXT NOT NULL,
@@ -193,7 +193,7 @@ class DatabaseService {
   //tao db saving_expenditure
   Future<void> _createSavingExpenditureTable(Database db) async {
     await db.execute('''
-      CREATE TABLE saving_expenditure (
+      CREATE TABLE IF NOT EXISTS saving_expenditure (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         user_id TEXT NOT NULL,
         type INTEGER NOT NULL CHECK(type IN (0, 1)),

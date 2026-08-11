@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import '../services/bank_email_sync_service.dart';
-import '../data/data_transaction.dart';
 
 class BankEmailSyncScreen extends StatefulWidget {
   const BankEmailSyncScreen({super.key});
@@ -36,7 +35,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
         title: const Text('Confirm deletion',
             style: TextStyle(fontWeight: FontWeight.bold)),
         content: Text(
-            'Are you sure you want to delete this email account "${account.email}"?'),
+            'Are you sure you want to delete bank account "${account.bankName} - ${account.accountNumber}"?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -54,14 +53,19 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
     );
 
     if (confirm == true) {
-      setState(() {
-        _accounts.removeWhere((a) => a.id == account.id);
-      });
-      await _syncService.saveAccounts(_accounts);
+      setState(() => _loading = true);
+      try {
+        await _syncService.deleteAccountFromServer(account.id);
+        _accounts = await _syncService.getAccounts();
+      } catch (e) {
+        debugPrint('Error deleting account: $e');
+      } finally {
+        setState(() => _loading = false);
+      }
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Delete email account successfully!'),
+            content: Text('Deleted bank account successfully!'),
             backgroundColor: Color(0xFF00C18A),
           ),
         );
@@ -72,14 +76,9 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
   void _openAccountSheet({EmailAccount? account}) {
     final isEdit = account != null;
     final formKey = GlobalKey<FormState>();
-    final emailController = TextEditingController(text: account?.email ?? '');
-    final passwordController =
-        TextEditingController(text: account?.password ?? '');
-    final hostController =
-        TextEditingController(text: account?.host ?? 'imap.gmail.com');
-    final portController =
-        TextEditingController(text: account?.port.toString() ?? '993');
-    bool isSecure = account?.isSecure ?? true;
+    final bankNameController = TextEditingController(text: account?.bankName ?? '');
+    final accountNumberController =
+        TextEditingController(text: account?.accountNumber ?? '');
     bool testing = false;
 
     showModalBottomSheet(
@@ -118,89 +117,26 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      isEdit ? 'Edit Email Account' : 'Add Email Account',
+                      isEdit ? 'Edit Bank Account' : 'Add Bank Account',
                       style: const TextStyle(
                           fontSize: 20, fontWeight: FontWeight.w800),
                     ),
                     const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          flex: 3,
-                          child: _buildTextField(
-                            controller: hostController,
-                            label: 'IMAP Server',
-                            hint: 'imap.gmail.com',
-                            validator: (v) =>
-                                v!.isEmpty ? 'Cannot be empty' : null,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          flex: 1,
-                          child: _buildTextField(
-                            controller: portController,
-                            label: 'Port',
-                            hint: '993',
-                            keyboardType: TextInputType.number,
-                            validator: (v) => v!.isEmpty ? 'Error' : null,
-                          ),
-                        ),
-                      ],
+                    _buildTextField(
+                      controller: bankNameController,
+                      label: 'Bank Name',
+                      hint: 'e.g. MBBank, Vietcombank',
+                      validator: (v) =>
+                          v!.isEmpty ? 'Cannot be empty' : null,
                     ),
                     const SizedBox(height: 16),
                     _buildTextField(
-                      controller: emailController,
-                      label: 'Email Address',
-                      hint: 'example@gmail.com',
-                      keyboardType: TextInputType.emailAddress,
-                      validator: (v) => v!.isEmpty || !v.contains('@')
-                          ? 'Invalid email address'
-                          : null,
-                    ),
-                    const SizedBox(height: 16),
-                    _buildTextField(
-                      controller: passwordController,
-                      label: 'App Password',
-                      hint: '•••• •••• •••• ••••',
-                      obscureText: true,
-                      validator: (v) => v!.isEmpty ? 'Cannot be empty' : null,
-                    ),
-                    const SizedBox(height: 12),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.blue.shade50,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.blue.shade100),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(Icons.info_outline,
-                              color: Colors.blue.shade700, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              'For Gmail accounts, you need to enable 2-Step Verification in your Google Account and create a 16-character "App Password" to fill in the password field above.',
-                              style: TextStyle(
-                                  color: Colors.blue.shade900,
-                                  fontSize: 12,
-                                  height: 1.4),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    SwitchListTile(
-                      activeColor: const Color(0xFF00C18A),
-                      contentPadding: EdgeInsets.zero,
-                      title: const Text('Secure connection (SSL/TLS)',
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 14)),
-                      value: isSecure,
-                      onChanged: (val) => setModalState(() => isSecure = val),
+                      controller: accountNumberController,
+                      label: 'Account Number',
+                      hint: 'e.g. 0381000123456',
+                      keyboardType: TextInputType.number,
+                      validator: (v) =>
+                          v!.isEmpty ? 'Cannot be empty' : null,
                     ),
                     const SizedBox(height: 24),
                     Row(
@@ -217,22 +153,20 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                             onPressed: testing
                                 ? null
                                 : () async {
-                                    if (!formKey.currentState!.validate())
+                                    if (!formKey.currentState!.validate()) {
                                       return;
+                                    }
                                     setModalState(() => testing = true);
                                     try {
                                       await _syncService.testConnection(
-                                        hostController.text.trim(),
-                                        int.parse(portController.text.trim()),
-                                        emailController.text.trim(),
-                                        passwordController.text,
-                                        isSecure,
+                                        bankNameController.text.trim(),
+                                        accountNumberController.text.trim(),
                                       );
                                       if (context.mounted) {
                                         _showStatusDialog(
                                           title: 'Connection successful',
                                           content:
-                                              'Connected to email successfully!',
+                                              'Connected to bank sync endpoint successfully!',
                                           isSuccess: true,
                                         );
                                       }
@@ -281,33 +215,29 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                     DateTime.now()
                                         .millisecondsSinceEpoch
                                         .toString(),
-                                email: emailController.text.trim(),
-                                password: passwordController.text,
-                                host: hostController.text.trim(),
-                                port: int.parse(portController.text.trim()),
-                                isSecure: isSecure,
+                                bankName: bankNameController.text.trim(),
+                                accountNumber: accountNumberController.text.trim(),
                               );
 
-                              setState(() {
-                                if (isEdit) {
-                                  final idx = _accounts
-                                      .indexWhere((a) => a.id == account.id);
-                                  if (idx != -1) {
-                                    _accounts[idx] = newAccount;
-                                  }
-                                } else {
-                                  _accounts.add(newAccount);
+                              try {
+                                await _syncService.saveAccountToServer(newAccount);
+                                final refreshed = await _syncService.getAccounts();
+                                if (mounted) {
+                                  setState(() {
+                                    _accounts = refreshed;
+                                  });
                                 }
-                              });
+                              } catch (e) {
+                                debugPrint('Error saving account: $e');
+                              }
 
-                              await _syncService.saveAccounts(_accounts);
                               if (context.mounted) {
                                 Navigator.pop(context);
                                 ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                     content: Text(isEdit
-                                        ? 'Updated email account successfully!'
-                                        : 'Added new email account successfully!'),
+                                        ? 'Updated bank account successfully!'
+                                        : 'Added new bank account successfully!'),
                                     backgroundColor: const Color(0xFF00C18A),
                                   ),
                                 );
@@ -336,7 +266,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
     if (_accounts.isEmpty) {
       _showStatusDialog(
         title: 'Need Setup',
-        content: 'Please add at least one email account before syncing.',
+        content: 'Please add at least one bank account before syncing.',
         isSuccess: false,
       );
       return;
@@ -349,7 +279,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
         _showStatusDialog(
           title: 'Sync Completed',
           content:
-              'Bank email sync completed.\nFound and recorded: $newTxns new transactions.',
+              'Bank transactions sync completed.\nFound and recorded: $newTxns new transactions.',
           isSuccess: true,
         );
       }
@@ -357,7 +287,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
       if (mounted) {
         _showStatusDialog(
           title: 'Sync Failed',
-          content: 'An error occurred during email sync.\nDetails: $e',
+          content: 'An error occurred during bank transactions sync.\nDetails: $e',
           isSuccess: false,
         );
       }
@@ -427,7 +357,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                   ),
                   const Expanded(
                       child: Center(
-                          child: Text('Bank Email Sync',
+                          child: Text('Bank Account Sync',
                               style: TextStyle(
                                   color: Colors.black,
                                   fontSize: 20,
@@ -459,7 +389,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('EMAIL ACCOUNT LIST',
+                                    const Text('BANK ACCOUNT LIST',
                                         style: TextStyle(
                                             fontWeight: FontWeight.w800,
                                             fontSize: 14,
@@ -475,7 +405,7 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                       padding: const EdgeInsets.all(32),
                                       alignment: Alignment.center,
                                       child: const Text(
-                                          'No email accounts configured'))
+                                          'No bank accounts configured'))
                                 else
                                   ..._accounts.map((account) {
                                     return Container(
@@ -489,11 +419,11 @@ class _BankEmailSyncScreenState extends State<BankEmailSyncScreen> {
                                               color: Colors.black12)),
                                       child: Row(
                                         children: [
-                                          const Icon(Icons.email,
+                                          const Icon(Icons.account_balance,
                                               color: primary),
                                           const SizedBox(width: 14),
                                           Expanded(
-                                              child: Text(account.email,
+                                              child: Text("${account.bankName} - ${account.accountNumber}",
                                                   style: const TextStyle(
                                                       fontWeight:
                                                           FontWeight.bold))),

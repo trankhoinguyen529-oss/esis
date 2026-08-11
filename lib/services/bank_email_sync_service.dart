@@ -1,43 +1,31 @@
 import 'dart:convert';
-import 'package:enough_mail/enough_mail.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import '../data/data_transaction.dart';
+import '../data/user_account.dart';
 import 'database_service.dart';
-import 'email_parser_service.dart';
 
 class EmailAccount {
   final String id;
-  final String email;
-  final String password;
-  final String host;
-  final int port;
-  final bool isSecure;
+  final String bankName;
+  final String accountNumber;
 
   EmailAccount({
     required this.id,
-    required this.email,
-    required this.password,
-    required this.host,
-    required this.port,
-    required this.isSecure,
+    required this.bankName,
+    required this.accountNumber,
   });
 
   Map<String, dynamic> toJson() => {
         'id': id,
-        'email': email,
-        'password': password,
-        'host': host,
-        'port': port,
-        'isSecure': isSecure,
+        'bankName': bankName,
+        'accountNumber': accountNumber,
       };
 
   factory EmailAccount.fromJson(Map<String, dynamic> json) => EmailAccount(
         id: json['id'] ?? '',
-        email: json['email'] ?? '',
-        password: json['password'] ?? '',
-        host: json['host'] ?? 'imap.gmail.com',
-        port: json['port'] ?? 993,
-        isSecure: json['isSecure'] ?? true,
+        bankName: json['bankName'] ?? json['email'] ?? '',
+        accountNumber: json['accountNumber'] ?? json['email'] ?? '',
       );
 }
 
@@ -45,200 +33,187 @@ class BankEmailSyncService {
   final DatabaseService _dbService = DatabaseService();
 
   // Settings Keys
-  static const String keyImapHost = 'email_imap_host';
-  static const String keyImapPort = 'email_imap_port';
-  static const String keyEmailAddress = 'email_address';
-  static const String keyAppPassword = 'email_app_password';
-  static const String keyIsSecure = 'email_is_secure';
-  static const String keyEnabledBanks = 'email_enabled_banks';
   static const String keyLastSyncTime = 'email_last_sync_time';
   static const String keyEmailAccountsJson = 'email_accounts_json';
 
-  /// Save sync configuration (Legacy - kept for compatibility)
-  Future<void> saveConfig({
-    required String host,
-    required int port,
-    required String email,
-    required String password,
-    required bool isSecure,
-    required List<String> enabledBanks,
-  }) async {
-    await _dbService.saveSetting(keyImapHost, host);
-    await _dbService.saveSetting(keyImapPort, port.toString());
-    await _dbService.saveSetting(keyEmailAddress, email);
-    await _dbService.saveSetting(keyAppPassword, password);
-    await _dbService.saveSetting(keyIsSecure, isSecure ? '1' : '0');
-    await _dbService.saveSetting(keyEnabledBanks, enabledBanks.join(','));
-  }
-
-  /// Get current sync configuration (Legacy - kept for compatibility)
-  Future<Map<String, dynamic>> getConfig() async {
-    final host = await _dbService.getSetting(keyImapHost) ?? 'imap.gmail.com';
-    final portStr = await _dbService.getSetting(keyImapPort) ?? '993';
-    final email = await _dbService.getSetting(keyEmailAddress) ?? '';
-    final password = await _dbService.getSetting(keyAppPassword) ?? '';
-    final isSecureStr = await _dbService.getSetting(keyIsSecure) ?? '1';
-    final banksStr = await _dbService.getSetting(keyEnabledBanks) ??
-        'Vietcombank,TPBank,Techcombank,MB Bank,ACB';
-
-    return {
-      'host': host,
-      'port': int.tryParse(portStr) ?? 993,
-      'email': email,
-      'password': password,
-      'isSecure': isSecureStr == '1',
-      'enabledBanks': banksStr.split(',').where((s) => s.isNotEmpty).toList(),
-    };
-  }
-
-  /// Get list of accounts with auto-migration from legacy config
+  /// Get list of accounts from the backend server
   Future<List<EmailAccount>> getAccounts() async {
-    final jsonStr = await _dbService.getSetting(keyEmailAccountsJson);
-    if (jsonStr != null && jsonStr.isNotEmpty) {
-      try {
-        final List<dynamic> list = jsonDecode(jsonStr);
-        return list.map((item) => EmailAccount.fromJson(item)).toList();
-      } catch (e) {
-        debugPrint('Error decoding accounts: $e');
+    try {
+      final List<UserAccountItem> list = await _dbService.getUserAccounts();
+      return list.map((item) => EmailAccount(
+        id: item.id,
+        bankName: item.bankName,
+        accountNumber: item.accountNumber,
+      )).toList();
+    } catch (e) {
+      debugPrint('Error getting accounts from server: $e. Falling back to local.');
+      // Fallback to local settings
+      final jsonStr = await _dbService.getSetting(keyEmailAccountsJson);
+      if (jsonStr != null && jsonStr.isNotEmpty) {
+        try {
+          final List<dynamic> list = jsonDecode(jsonStr);
+          return list.map((item) => EmailAccount.fromJson(item)).toList();
+        } catch (err) {
+          debugPrint('Error decoding accounts: $err');
+        }
       }
+      return [];
     }
-
-    // Migration from old single config
-    final config = await getConfig();
-    final String email = config['email'] ?? '';
-    if (email.isNotEmpty) {
-      final oldAccount = EmailAccount(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        email: email,
-        password: config['password'] ?? '',
-        host: config['host'] ?? 'imap.gmail.com',
-        port: config['port'] ?? 993,
-        isSecure: config['isSecure'] ?? true,
-      );
-      final accounts = [oldAccount];
-      await saveAccounts(accounts);
-      // Clean up old settings to prevent running migration again
-      await _dbService.deleteSetting(keyEmailAddress);
-      await _dbService.deleteSetting(keyAppPassword);
-      return accounts;
-    }
-
-    return [];
   }
 
-  /// Save list of accounts
+  /// Save list of accounts locally (fallback)
   Future<void> saveAccounts(List<EmailAccount> accounts) async {
     final list = accounts.map((a) => a.toJson()).toList();
     await _dbService.saveSetting(keyEmailAccountsJson, jsonEncode(list));
   }
 
-  /// Test connection to IMAP server
-  Future<bool> testConnection(
-    String host,
-    int port,
-    String email,
-    String password,
-    bool isSecure,
-  ) async {
-    debugPrint('Connecting: host=$host port=$port email=$email');
-    debugPrint('Password length: ${password.length}');
-    final client = ImapClient(isLogEnabled: false);
+  /// Save account to backend server
+  Future<void> saveAccountToServer(EmailAccount account) async {
     try {
-      await client.connectToServer(host, port, isSecure: isSecure);
-      await client.login(email, password);
-      await client.logout();
-      return true;
+      final serverAccounts = await _dbService.getUserAccounts();
+      final idx = serverAccounts.indexWhere((s) => s.id == account.id);
+      if (idx != -1) {
+        // Update existing
+        final existing = serverAccounts[idx];
+        final updated = UserAccountItem(
+          id: existing.id,
+          userId: _dbService.currentUserId,
+          accountNumber: account.accountNumber,
+          bankName: account.bankName,
+          accountName: existing.accountName,
+          balance: existing.balance,
+          currency: existing.currency,
+        );
+        await _dbService.updateUserAccount(updated);
+      } else {
+        // Create new
+        final newAcc = UserAccountItem(
+          id: account.id.isEmpty ? DateTime.now().millisecondsSinceEpoch.toString() : account.id,
+          userId: _dbService.currentUserId,
+          accountNumber: account.accountNumber,
+          bankName: account.bankName,
+          accountName: 'Linked Account',
+          balance: 0.0,
+          currency: 'VND',
+        );
+        await _dbService.createUserAccount(newAcc);
+      }
     } catch (e) {
-      debugPrint('IMAP Test Connection Error: $e');
+      debugPrint('Error saving account to server: $e. Saving locally.');
+      // Fallback: save to local setting
+      final accounts = await getAccounts();
+      accounts.removeWhere((a) => a.id == account.id);
+      accounts.add(account);
+      await saveAccounts(accounts);
+    }
+  }
+
+  /// Delete account from backend server
+  Future<void> deleteAccountFromServer(String id) async {
+    try {
+      await _dbService.deleteUserAccount(id);
+    } catch (e) {
+      debugPrint('Error deleting account from server: $e. Deleting locally.');
+      // Fallback: delete from local setting
+      final accounts = await getAccounts();
+      accounts.removeWhere((a) => a.id == id);
+      await saveAccounts(accounts);
+    }
+  }
+
+  /// Test connection to backend
+  Future<bool> testConnection(
+    String bankName,
+    String accountNumber,
+  ) async {
+    debugPrint('Testing connection for bank=$bankName, account=$accountNumber');
+    try {
+      final url = Uri.parse('${_dbService.backendBaseUrl}/api/v1/bank-transactions?accountNumber=${accountNumber.trim()}');
+      final response = await http.get(url);
+      if (response.statusCode == 200) {
+        return true;
+      }
+      throw Exception('Server returned status: ${response.statusCode}');
+    } catch (e) {
+      debugPrint('Test Connection Error: $e');
       rethrow;
     }
   }
 
-  /// Run email sync for all configured accounts
+  /// Run bank sync for all configured accounts
   /// Returns a count of new transactions recorded
   Future<int> syncEmails() async {
     final accounts = await getAccounts();
     if (accounts.isEmpty) {
-      throw Exception('Please configure at least one email account.');
+      throw Exception('Please configure at least one bank account.');
     }
 
     int newTransactionsCount = 0;
     final List<String> errors = [];
 
     for (final account in accounts) {
-      if (account.email.isEmpty || account.password.isEmpty) continue;
+      if (account.accountNumber.isEmpty) continue;
 
-      final client = ImapClient(isLogEnabled: false);
       try {
-        await client.connectToServer(account.host, account.port,
-            isSecure: account.isSecure);
-        await client.login(account.email, account.password);
-        await client.selectInbox();
+        final url = Uri.parse('${_dbService.backendBaseUrl}/api/v1/bank-transactions?accountNumber=${account.accountNumber.trim()}');
+        final response = await http.get(url);
 
-        // Fetch the last 20 messages
-        final fetchResult = await client.fetchRecentMessages(
-          messageCount: 20,
-          criteria: 'BODY.PEEK[]',
-        );
+        if (response.statusCode != 200) {
+          throw Exception('Failed to fetch transactions (Status: ${response.statusCode})');
+        }
 
-        for (final message in fetchResult.messages) {
-          final from = message.from != null && message.from!.isNotEmpty
-              ? message.from!.first.email
-              : '';
-          final subject = message.decodeSubject() ?? '';
-          final body = message.decodeTextPlainPart() ??
-              message.decodeTextHtmlPart() ??
-              '';
-          String? messageId;
-          if (message.headers != null) {
-            for (final h in message.headers!) {
-              if (h.name.toLowerCase() == 'message-id') {
-                messageId = h.value;
-                break;
-              }
-            }
-          }
-          messageId ??=
-              '${from}_${subject}_${message.envelope?.date?.millisecondsSinceEpoch}';
+        final List<dynamic> list = jsonDecode(response.body);
+        for (final item in list) {
+          final String sepayId = item['sepayTransactionId'].toString();
+          final messageId = 'SEPAY_$sepayId';
 
           // Check if already synced
           final alreadySynced = await _dbService.isEmailSynced(messageId);
           if (alreadySynced) continue;
 
-          // Parse email
-          final parsed = EmailParserService.parse(from, subject, body);
-          if (parsed == null) continue;
+          final String transferType = item['transferType'] ?? 'out';
+          final bool isExpense = 'out' == transferType.toLowerCase();
+          final double amount = (item['amount'] as num).toDouble();
+          final String content = item['content'] ?? '';
+          final String transactionDateStr = item['transactionDate'] ?? '';
 
-          // Mapping to IconData
-          IconData categoryIcon = Icons.account_balance_rounded;
+          DateTime date = DateTime.now();
+          String time = "${date.hour.toString().padLeft(2, '0')}:${date.minute.toString().padLeft(2, '0')}";
+
+          if (transactionDateStr.isNotEmpty) {
+            try {
+              final parsedDate = DateTime.parse(transactionDateStr);
+              date = parsedDate;
+              time = "${parsedDate.hour.toString().padLeft(2, '0')}:${parsedDate.minute.toString().padLeft(2, '0')}";
+            } catch (e) {
+              debugPrint('Error parsing date: $transactionDateStr');
+            }
+          }
 
           final transaction = TransactionItem(
-            //icon: categoryIcon,
-            title: parsed.description,
-            category: parsed.category,
-            time: parsed.time,
-            date: parsed.date,
-            amount: parsed.amount,
-            isExpense: parsed.isExpense,
+            title: content.isNotEmpty ? content : '${account.bankName} Transaction',
+            category: 'Bank',
+            time: time,
+            date: date,
+            amount: amount,
+            isExpense: isExpense,
             isBank: true,
           );
 
-          // Save transaction & mark email as synced
+          // Save transaction & mark as synced
           await _dbService.insertTransaction(transaction);
           await _dbService.markEmailSynced(messageId);
           newTransactionsCount++;
         }
-
-        await client.logout();
       } catch (e) {
-        debugPrint('Email Sync Error for ${account.email}: $e');
-        errors.add('${account.email}: $e');
+        debugPrint('Bank Sync Error for ${account.bankName} (${account.accountNumber}): $e');
+        errors.add('${account.bankName}: $e');
       }
     }
 
     if (errors.length == accounts.length && accounts.isNotEmpty) {
       throw Exception(
-          'Email sync failed for all accounts:\n${errors.join('\n')}');
+          'Bank sync failed for all accounts:\n${errors.join('\n')}');
     }
 
     await _dbService.saveSetting(
@@ -246,39 +221,21 @@ class BankEmailSyncService {
     return newTransactionsCount;
   }
 
-  /// Simulate an email sync for testing purposes without needing actual IMAP details
+  /// Simulate sync for testing
   Future<TransactionItem?> simulateSync(String bank, String rawText) async {
-    String from = 'notification@bank.com.vn';
-    String subject = 'Thong bao bien dong so du';
-
-    if (bank == 'Vietcombank') {
-      from = 'no-reply@vietcombank.com.vn';
-      subject = 'VCB Digibank - Thong bao bien dong so du';
-    } else if (bank == 'TPBank') {
-      from = 'ebank@tpb.com.vn';
-      subject = 'TPBank - Thong bao bien dong so du tai khoan';
-    } else if (bank == 'Techcombank') {
-      from = 'no-reply@techcombank.com.vn';
-      subject = 'Thong bao giao dich Techcombank';
-    }
-
-    final parsed = EmailParserService.parse(from, subject, rawText);
-    if (parsed == null) return null;
-
+    // Left for compatibility / simulation testing if needed
     final mockMessageId =
         'MOCK_${bank.toUpperCase()}_${DateTime.now().millisecondsSinceEpoch}';
 
     final transaction = TransactionItem(
-        //icon: categoryIcon,
-        title: parsed.description,
-        category: parsed.category,
-        time: parsed.time,
-        date: parsed.date,
-        amount: parsed.amount,
-        isExpense: parsed.isExpense,
+        title: 'Mock $bank: $rawText',
+        category: 'Bank',
+        time: '12:00',
+        date: DateTime.now(),
+        amount: 2000.0,
+        isExpense: true,
         isBank: true);
 
-    // Save and record as synced
     await _dbService.insertTransaction(transaction);
     await _dbService.markEmailSynced(mockMessageId);
     return transaction;
