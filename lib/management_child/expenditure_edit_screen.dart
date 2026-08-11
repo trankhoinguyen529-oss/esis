@@ -213,10 +213,7 @@ class _ExpenditureEditScreenState extends State<ExpenditureEditScreen> {
   }
 
   String _formatCurrency(double val) {
-    if (val == val.toInt()) {
-      return '\$${val.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
-    }
-    return '\$${val.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+    return formatCurrency(val);
   }
 
   @override
@@ -516,7 +513,7 @@ class _ExpenditureEditScreenState extends State<ExpenditureEditScreen> {
                               hintText: 'Enter budget amount',
                               fillColor: scaffoldBg,
                               filled: true,
-                              prefixText: '\$ ',
+                              suffixText: 'đ',
                               border: OutlineInputBorder(
                                 borderRadius: BorderRadius.circular(16),
                                 borderSide: BorderSide.none,

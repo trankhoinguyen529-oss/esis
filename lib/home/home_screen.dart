@@ -295,7 +295,7 @@ class _HomeState extends State<Home> {
                                             child: LinearProgressIndicator(),
                                           )
                                         : Text(
-                                            '\$${_income.toStringAsFixed(2)}',
+                                            formatCurrency(_income),
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w800,
@@ -339,7 +339,7 @@ class _HomeState extends State<Home> {
                                             child: LinearProgressIndicator(),
                                           )
                                         : Text(
-                                            '\$${_expense.toStringAsFixed(2)}',
+                                            formatCurrency(_expense),
                                             style: TextStyle(
                                               fontSize: 16,
                                               fontWeight: FontWeight.w800,

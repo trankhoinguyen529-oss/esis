@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:a_management/services/database_service.dart';
 
 class Createtransactionitem {
   Widget createTransactionItem(
@@ -47,7 +48,7 @@ class Createtransactionitem {
               Text(tag, style: const TextStyle(color: Colors.black54)),
               const SizedBox(height: 6),
               Text(
-                (negative) ? '-\$$amount' : '+\$$amount',
+                (negative) ? '-${formatCurrency(amount)}' : '+${formatCurrency(amount)}',
                 style: TextStyle(
                   color: negative ? Colors.blue : Colors.black,
                   fontWeight: FontWeight.w700,

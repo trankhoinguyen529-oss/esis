@@ -250,8 +250,8 @@ class _TransactionItemWidgetState extends State<_TransactionItemWidget> {
                 const SizedBox(height: 6),
                 Text(
                   isExpense
-                      ? '-\$${widget.item.amount.toStringAsFixed(2)}'
-                      : '+\$${widget.item.amount.toStringAsFixed(2)}',
+                      ? '-${formatCurrency(widget.item.amount)}'
+                      : '+${formatCurrency(widget.item.amount)}',
                   style: TextStyle(
                     color:
                         isExpense ? Colors.red[400] : const Color(0xFF00C18A),

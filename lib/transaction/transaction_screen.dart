@@ -43,6 +43,12 @@ class _TransactionScreenState extends State<TransactionScreen> {
     _loadSummary();
   }
 
+  @override
+  void didUpdateWidget(covariant TransactionScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    _loadSummary();
+  }
+
   Future<void> _openFilter() async {
     final result = await Navigator.of(context).push(
       MaterialPageRoute(
@@ -185,7 +191,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 child: LinearProgressIndicator(),
                               )
                             : Text(
-                                '\$${_income.toStringAsFixed(2)}',
+                                formatCurrency(_income),
                                 style: const TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
@@ -228,7 +234,7 @@ class _TransactionScreenState extends State<TransactionScreen> {
                                 child: LinearProgressIndicator(),
                               )
                             : Text(
-                                '\$${_expense.toStringAsFixed(2)}',
+                                formatCurrency(_expense),
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w800,
@@ -307,7 +313,8 @@ class _TransactionScreenState extends State<TransactionScreen> {
 
                         //debugPrint('******Result: ${displaytransaction.transactionId}');
                         if (result == true) {
-                          setState(() {});
+                          _loadSummary();
+                          widget.onTransactionAdded?.call();
                         }
                       },
                     ),

@@ -332,7 +332,7 @@ class _EditTransactionScreenState extends State<EditTransactionScreen> {
                       ),
                       const SizedBox(height: 16),
                       // Amount field
-                      _textField.buildLabel('Amount (\$)'),
+                      _textField.buildLabel('Amount (đ)'),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: (!isBank)

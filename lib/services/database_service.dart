@@ -9,6 +9,21 @@ import 'package:path/path.dart';
 import 'package:http/http.dart' as http;
 import '../data/data_transaction.dart';
 import '../data/user_account.dart';
+import '../data/wallet.dart';
+
+String formatCurrency(double val) {
+  final isInt = val == val.toInt();
+  final formattedStr = isInt ? val.toInt().toString() : val.toStringAsFixed(2);
+
+  final parts = formattedStr.split('.');
+  final intPart = parts[0].replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},');
+
+  if (parts.length > 1) {
+    return '$intPart.${parts[1]}đ';
+  }
+  return '$intPartđ';
+}
 
 class DatabaseService {
   static final DatabaseService _instance = DatabaseService._internal();
@@ -644,7 +659,8 @@ class DatabaseService {
   Future<int> getCategoryId(String title) async {
     try {
       final cats = await getCategory();
-      final match = cats.firstWhere((c) => c.title.toLowerCase() == title.toLowerCase());
+      final match =
+          cats.firstWhere((c) => c.title.toLowerCase() == title.toLowerCase());
       return match.id ?? -1;
     } catch (e) {
       return -1;
@@ -731,12 +747,15 @@ class DatabaseService {
       );
       if (response.statusCode == 200) {
         final List<dynamic> list = jsonDecode(response.body);
-        return list.map((m) => CategoryItem(
-          id: m['id'] as int?,
-          userId: m['userId'] as String? ?? currentUserId,
-          title: m['title'] as String,
-          icon: IconData(m['iconCode'] as int, fontFamily: 'MaterialIcons'),
-        )).toList();
+        return list
+            .map((m) => CategoryItem(
+                  id: m['id'] as int?,
+                  userId: m['userId'] as String? ?? currentUserId,
+                  title: m['title'] as String,
+                  icon: IconData(m['iconCode'] as int,
+                      fontFamily: 'MaterialIcons'),
+                ))
+            .toList();
       } else {
         throw Exception('Failed to fetch categories from server');
       }
@@ -756,7 +775,8 @@ class DatabaseService {
         final List<dynamic> list = jsonDecode(response.body);
         return list.map((m) => UserAccountItem.fromJson(m)).toList();
       } else {
-        throw Exception('Failed to fetch user accounts: ${response.statusCode}');
+        throw Exception(
+            'Failed to fetch user accounts: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error getting user accounts: $e');
@@ -774,7 +794,8 @@ class DatabaseService {
       if (response.statusCode == 201) {
         return UserAccountItem.fromJson(jsonDecode(response.body));
       } else {
-        throw Exception('Failed to create user account: ${response.statusCode} ${response.body}');
+        throw Exception(
+            'Failed to create user account: ${response.statusCode} ${response.body}');
       }
     } catch (e) {
       debugPrint('Error creating user account: $e');
@@ -790,7 +811,8 @@ class DatabaseService {
         body: jsonEncode(item.toJson()),
       );
       if (response.statusCode != 200) {
-        throw Exception('Failed to update user account: ${response.statusCode}');
+        throw Exception(
+            'Failed to update user account: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error updating user account: $e');
@@ -801,13 +823,117 @@ class DatabaseService {
   Future<void> deleteUserAccount(String id) async {
     try {
       final response = await http.delete(
-        Uri.parse('$backendBaseUrl/api/v1/user-accounts/$id?userId=$currentUserId'),
+        Uri.parse(
+            '$backendBaseUrl/api/v1/user-accounts/$id?userId=$currentUserId'),
       );
       if (response.statusCode != 200) {
-        throw Exception('Failed to delete user account: ${response.statusCode}');
+        throw Exception(
+            'Failed to delete user account: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error deleting user account: $e');
+      rethrow;
+    }
+  }
+
+  Future<List<WalletItem>> getWallets() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$backendBaseUrl/api/v1/wallets?userId=$currentUserId'),
+      );
+      if (response.statusCode == 200) {
+        final List<dynamic> list = jsonDecode(response.body);
+        return list.map((m) => WalletItem.fromJson(m)).toList();
+      } else {
+        throw Exception('Failed to fetch wallets: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error getting wallets: $e');
+      rethrow;
+    }
+  }
+
+  Future<WalletItem> createWallet(WalletItem item) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$backendBaseUrl/api/v1/wallets'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(item.toJson()),
+      );
+      if (response.statusCode == 201) {
+        return WalletItem.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception(
+            'Failed to create wallet: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error creating wallet: $e');
+      rethrow;
+    }
+  }
+
+  Future<WalletItem> updateWallet(WalletItem item) async {
+    try {
+      final response = await http.put(
+        Uri.parse('$backendBaseUrl/api/v1/wallets/${item.id}'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(item.toJson()),
+      );
+      if (response.statusCode == 200) {
+        return WalletItem.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception(
+            'Failed to update wallet: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error updating wallet: $e');
+      rethrow;
+    }
+  }
+
+  Future<WalletItem> adjustWalletBalance(int id, double amount, bool isExpense) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$backendBaseUrl/api/v1/wallets/$id/adjust-balance?amount=$amount&isExpense=$isExpense'),
+        headers: {'Content-Type': 'application/json'},
+      );
+      if (response.statusCode == 200) {
+        return WalletItem.fromJson(jsonDecode(response.body));
+      } else {
+        throw Exception(
+            'Failed to adjust wallet balance: ${response.statusCode} ${response.body}');
+      }
+    } catch (e) {
+      debugPrint('Error adjusting wallet balance: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> deleteWallet(int id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$backendBaseUrl/api/v1/wallets/$id?userId=$currentUserId'),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to delete wallet: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error deleting wallet: $e');
+      rethrow;
+    }
+  }
+
+  Future<void> setDefaultWallet(int id) async {
+    try {
+      final response = await http.post(
+        Uri.parse(
+            '$backendBaseUrl/api/v1/wallets/$id/set-default?userId=$currentUserId'),
+      );
+      if (response.statusCode != 200) {
+        throw Exception('Failed to set default wallet: ${response.statusCode}');
+      }
+    } catch (e) {
+      debugPrint('Error setting default wallet: $e');
       rethrow;
     }
   }
@@ -821,12 +947,14 @@ class DatabaseService {
     if (id == null) return null;
     final effectiveUserId = userId ?? currentUserId;
 
-    final oldCategory = await getCategory().then((cats) => cats.firstWhere((c) => c.id == id));
+    final oldCategory =
+        await getCategory().then((cats) => cats.firstWhere((c) => c.id == id));
     final oldTitle = oldCategory.title;
 
     try {
       final response = await http.delete(
-        Uri.parse('$backendBaseUrl/api/v1/categories/$id?userId=$effectiveUserId'),
+        Uri.parse(
+            '$backendBaseUrl/api/v1/categories/$id?userId=$effectiveUserId'),
       );
       if (response.statusCode != 200) {
         throw Exception('Failed to delete category on server');
@@ -853,7 +981,8 @@ class DatabaseService {
   Future<IconData> getCategoryIcon(String title) async {
     try {
       final cats = await getCategory();
-      final match = cats.firstWhere((c) => c.title.toLowerCase() == title.toLowerCase());
+      final match =
+          cats.firstWhere((c) => c.title.toLowerCase() == title.toLowerCase());
       return match.icon;
     } catch (e) {
       return Icons.more_horiz;
@@ -867,22 +996,25 @@ class DatabaseService {
 
     List<Map<String, dynamic>> items = [];
     try {
-      final response = await http.get(Uri.parse('$backendBaseUrl/api/v1/saving-expenditures?userId=$userId'));
+      final response = await http.get(Uri.parse(
+          '$backendBaseUrl/api/v1/saving-expenditures?userId=$userId'));
       if (response.statusCode == 200) {
         final List<dynamic> list = jsonDecode(response.body);
-        items = list.map((m) => {
-          'id': m['id'] as int?,
-          'user_id': m['userId'] as String,
-          'type': m['type'] as int,
-          'title': m['title'] as String,
-          'icon_code': m['iconCode'] as int,
-          'value': m['value'] as int,
-          'current_value': m['currentValue'] as int,
-          'associated_categories': m['associatedCategories'] as String?,
-          'start_date': m['startDate'] as String?,
-          'end_date': m['endDate'] as String?,
-          'loopable': (m['loopable'] as bool) ? 1 : 0,
-        }).toList();
+        items = list
+            .map((m) => {
+                  'id': m['id'] as int?,
+                  'user_id': m['userId'] as String,
+                  'type': m['type'] as int,
+                  'title': m['title'] as String,
+                  'icon_code': m['iconCode'] as int,
+                  'value': m['value'] as int,
+                  'current_value': m['currentValue'] as int,
+                  'associated_categories': m['associatedCategories'] as String?,
+                  'start_date': m['startDate'] as String?,
+                  'end_date': m['endDate'] as String?,
+                  'loopable': (m['loopable'] as bool) ? 1 : 0,
+                })
+            .toList();
       }
     } catch (e) {
       debugPrint('Error fetching in _checkAndProcessExpiredBudgets: $e');
@@ -951,26 +1083,29 @@ class DatabaseService {
       {int? type}) async {
     await _checkAndProcessExpiredBudgets();
     try {
-      String url = '$backendBaseUrl/api/v1/saving-expenditures?userId=$currentUserId';
+      String url =
+          '$backendBaseUrl/api/v1/saving-expenditures?userId=$currentUserId';
       if (type != null) {
         url += '&type=$type';
       }
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         final List<dynamic> list = jsonDecode(response.body);
-        return list.map((m) => {
-          'id': m['id'] as int?,
-          'user_id': m['userId'] as String,
-          'type': m['type'] as int,
-          'title': m['title'] as String,
-          'icon_code': m['iconCode'] as int,
-          'value': m['value'] as int,
-          'current_value': m['currentValue'] as int,
-          'associated_categories': m['associatedCategories'] as String?,
-          'start_date': m['startDate'] as String?,
-          'end_date': m['endDate'] as String?,
-          'loopable': (m['loopable'] as bool) ? 1 : 0,
-        }).toList();
+        return list
+            .map((m) => {
+                  'id': m['id'] as int?,
+                  'user_id': m['userId'] as String,
+                  'type': m['type'] as int,
+                  'title': m['title'] as String,
+                  'icon_code': m['iconCode'] as int,
+                  'value': m['value'] as int,
+                  'current_value': m['currentValue'] as int,
+                  'associated_categories': m['associatedCategories'] as String?,
+                  'start_date': m['startDate'] as String?,
+                  'end_date': m['endDate'] as String?,
+                  'loopable': (m['loopable'] as bool) ? 1 : 0,
+                })
+            .toList();
       } else {
         throw Exception('Failed to fetch saving expenditure items from server');
       }
@@ -1044,7 +1179,8 @@ class DatabaseService {
   Future<int> deleteSavingExpenditureItem(int id) async {
     try {
       final response = await http.delete(
-        Uri.parse('$backendBaseUrl/api/v1/saving-expenditures/$id?userId=$currentUserId'),
+        Uri.parse(
+            '$backendBaseUrl/api/v1/saving-expenditures/$id?userId=$currentUserId'),
       );
       if (response.statusCode == 200) {
         return 1;

@@ -207,7 +207,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       ),
                       const SizedBox(height: 16),
                       // Amount field from
-                      _textfield.buildLabel('From(\$)'),
+                      _textfield.buildLabel('From (đ)'),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: () => setState(() {
@@ -228,7 +228,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                             ],
                             validator: (v) {
                               if (v == null || v.trim().isEmpty) {
-                                return 'Please Enter Amount';
+                                  return 'Please Enter Amount';
                               }
                               final parsed = double.tryParse(v.trim());
                               if (parsed == null || parsed <= 0) {
@@ -241,7 +241,7 @@ class _TransactionFilterScreenState extends State<TransactionFilterScreen> {
                       ),
                       const SizedBox(height: 16),
                       // Amount field up to
-                      _textfield.buildLabel('Up To(\$)'),
+                      _textfield.buildLabel('Up To (đ)'),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: () => setState(() {

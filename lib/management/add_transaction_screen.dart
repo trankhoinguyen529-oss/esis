@@ -4,6 +4,7 @@ import 'package:a_management/widget/widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../data/data_transaction.dart';
+import '../data/wallet.dart';
 import '../services/database_service.dart';
 
 class AddTransactionScreen extends StatefulWidget {
@@ -37,6 +38,9 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
 
   DatabaseService db = DatabaseService();
   Map<String, IconData> itemMap = {};
+  List<WalletItem> _wallets = [];
+  WalletItem? _selectedWallet;
+  bool _isLoadingWallets = true;
 
   static const Color primary = Color(0xFF00C18A);
   static const Color surface = Color(0xFFF3FFF8);
@@ -45,7 +49,32 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
   void initState() {
     super.initState();
     _loadCategories();
+    _loadWallets();
     _titleCtrl.text = selectedCategory;
+  }
+
+  Future<void> _loadWallets() async {
+    try {
+      final wallets = await db.getWallets();
+      if (!mounted) return;
+      setState(() {
+        _wallets = wallets;
+        if (_wallets.isNotEmpty) {
+          _selectedWallet = _wallets.firstWhere(
+            (w) => w.isDefault,
+            orElse: () => _wallets.first,
+          );
+        }
+        _isLoadingWallets = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading wallets: $e');
+      if (mounted) {
+        setState(() {
+          _isLoadingWallets = false;
+        });
+      }
+    }
   }
 
   @override
@@ -83,9 +112,180 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
     });
   }
 
+  Widget _buildWalletSelector() {
+    if (_isLoadingWallets) {
+      return const SizedBox(
+        height: 90,
+        child: Center(
+          child: CircularProgressIndicator(color: primary),
+        ),
+      );
+    }
+    if (_wallets.isEmpty) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black12),
+        ),
+        child: const Text(
+          'No wallets found. Please add a wallet first.',
+          style: TextStyle(color: Colors.black54),
+        ),
+      );
+    }
+
+    return SizedBox(
+      height: 90,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: _wallets.length,
+        itemBuilder: (context, index) {
+          final wallet = _wallets[index];
+          final isSelected = _selectedWallet?.id == wallet.id;
+
+          Gradient gradient;
+          if (wallet.type.toLowerCase() == 'bank') {
+            gradient = const LinearGradient(
+              colors: [Color(0xFF1E3C72), Color(0xFF2A5298)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            );
+          } else if (wallet.type.toLowerCase() == 'card') {
+            gradient = const LinearGradient(
+              colors: [Color(0xFF7F00FF), Color(0xFFE100FF)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            );
+          } else if (wallet.type.toLowerCase() == 'cash') {
+            gradient = const LinearGradient(
+              colors: [Color(0xFF00B4DB), Color(0xFF0083B0)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            );
+          } else {
+            gradient = const LinearGradient(
+              colors: [Color(0xFFF7971E), Color(0xFFFFD200)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            );
+          }
+
+          return GestureDetector(
+            onTap: () {
+              setState(() {
+                _selectedWallet = wallet;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              width: 140,
+              margin: const EdgeInsets.only(right: 12, top: 4, bottom: 4),
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                gradient: isSelected ? gradient : null,
+                color: isSelected ? null : Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                border: isSelected
+                    ? Border.all(color: Colors.transparent, width: 2)
+                    : Border.all(color: Colors.black12, width: 1),
+                boxShadow: isSelected
+                    ? [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.15),
+                          blurRadius: 6,
+                          offset: const Offset(0, 3),
+                        ),
+                      ]
+                    : [],
+              ),
+              child: Stack(
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  wallet.name,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isSelected ? Colors.white : Colors.black87,
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                  ),
+                                ),
+                              ),
+                              if (wallet.isDefault)
+                                Icon(
+                                  Icons.star,
+                                  color: isSelected ? Colors.white : Colors.orange,
+                                  size: 13,
+                                ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            wallet.type,
+                            style: TextStyle(
+                              color: isSelected
+                                  ? Colors.white.withOpacity(0.8)
+                                  : Colors.black45,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Text(
+                        formatCurrency(wallet.balance),
+                        style: TextStyle(
+                          color: isSelected ? Colors.white : primary,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (isSelected)
+                    const Positioned(
+                      top: 0,
+                      right: 0,
+                      child: Icon(
+                        Icons.check_circle,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     setState(() => _isSaving = true);
+
+    final amount = double.tryParse(_amountCtrl.text.trim()) ?? 0.0;
+    if (_isExpense && _selectedWallet != null && _selectedWallet!.balance < amount) {
+      if (mounted) {
+        Appsnackbar.error_snackbar(context, 'Số dư ví không đủ để thực hiện giao dịch!');
+        setState(() => _isSaving = false);
+      }
+      return;
+    }
 
     final now = TimeOfDay.now();
     final timeStr =
@@ -100,11 +300,19 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
       category: selectedCategory,
       time: timeStr,
       date: _selectedDate,
-      amount: double.parse(_amountCtrl.text.trim()),
+      amount: amount,
       isExpense: _isExpense,
     );
 
     await DatabaseService().insertTransaction(item);
+
+    if (_selectedWallet != null && _selectedWallet!.id != null) {
+      try {
+        await db.adjustWalletBalance(_selectedWallet!.id!, amount, _isExpense);
+      } catch (e) {
+        debugPrint('Error adjusting wallet balance: $e');
+      }
+    }
 
     if (mounted) {
       setState(() => _isSaving = false);
@@ -292,6 +500,10 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                         ),
                       ),
                       const SizedBox(height: 20),
+                      textfield.buildLabel('Select Wallet'),
+                      const SizedBox(height: 8),
+                      _buildWalletSelector(),
+                      const SizedBox(height: 16),
                       // Category field
                       textfield.buildLabel('Category'),
                       const SizedBox(height: 8),
@@ -318,7 +530,7 @@ class _AddTransactionScreenState extends State<AddTransactionScreen> {
                       ),
                       const SizedBox(height: 16),
                       // Amount field
-                      textfield.buildLabel('Amount (\$)'),
+                      textfield.buildLabel('Amount (đ)'),
                       const SizedBox(height: 8),
                       GestureDetector(
                         onTap: () =>

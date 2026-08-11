@@ -123,16 +123,14 @@ class _ManagementScreenState extends State<ManagementScreen> {
                               cat.icon,
                               cat.title,
                               () async {
-                                final result = await Navigator.of(context).push(
+                                await Navigator.of(context).push(
                                   MaterialPageRoute(
                                     builder: (_) =>
                                         Categorydetail(category: cat.title),
                                   ),
                                 );
-                                if (result == true) {
-                                  setState(() {});
-                                  widget.onTransactionAdded?.call();
-                                }
+                                setState(() {});
+                                widget.onTransactionAdded?.call();
                               },
                             );
                           },
@@ -160,13 +158,13 @@ class _ManagementScreenState extends State<ManagementScreen> {
                             Icons.account_balance_rounded,
                             'Bank',
                             () async {
-                              final result = await Navigator.of(context).push(
+                              await Navigator.of(context).push(
                                 MaterialPageRoute(
                                   builder: (_) => Bankdetail(),
                                 ),
                               );
-                              if (result == true)
-                                widget.onTransactionAdded?.call();
+                              setState(() {});
+                              widget.onTransactionAdded?.call();
                             },
                           ),
                         ),

@@ -296,7 +296,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
 
                     // Budget Value
                     const Text(
-                      'Budget Limit Value (\$)',
+                      'Budget Limit Value (đ)',
                       style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.bold,
@@ -311,7 +311,7 @@ class _AddExpenditureScreenState extends State<AddExpenditureScreen> {
                         hintText: 'Enter budget amount',
                         fillColor: Colors.white,
                         filled: true,
-                        prefixText: '\$ ',
+                        suffixText: 'đ',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(16),
                           borderSide: BorderSide.none,

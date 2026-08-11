@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:math';
 import '../data/piechartdata.dart';
 import '../data/categorycolor.dart';
+import 'package:a_management/services/database_service.dart';
 
 /// `BubbleClipper` tạo hình dạng bong bóng đối thoại có mũi tên chỉ sang trái (hướng về biểu đồ).
 class BubbleClipper extends CustomClipper<Path> {
@@ -200,7 +201,7 @@ class _CustomPieChartState extends State<CustomPieChart> {
                             FittedBox(
                               fit: BoxFit.scaleDown,
                               child: Text(
-                                '\$${selectedItem.value.toStringAsFixed(2)}',
+                                formatCurrency(selectedItem.value),
                                 style: TextStyle(
                                   fontSize: 11,
                                   color: CategoryColor.getColor(selectedItem.name),

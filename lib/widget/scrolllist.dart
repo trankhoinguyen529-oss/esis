@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../data/categorycolor.dart';
+import 'package:a_management/services/database_service.dart';
 
 /// `ScrollList` nhận dữ liệu là một `Map<String, double>` đại diện cho tên danh mục và giá trị của nó.
 /// Khi build, nó vẽ ra danh sách các danh mục có thể cuộn được, theo thứ tự: hình tròn màu, tên danh mục, và giá trị số tiền.
@@ -58,7 +59,7 @@ class ScrollList extends StatelessWidget {
               ),
               // Giá trị số tiền
               Text(
-                '$sign\$${value.toStringAsFixed(2)}',
+                '$sign${formatCurrency(value)}',
                 style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w700,

@@ -47,7 +47,7 @@ class Displayexpenditure {
               ),
             ),
             const Text(
-              '\$0.00',
+              '0đ',
               style: TextStyle(
                 color: Colors.redAccent,
                 fontWeight: FontWeight.w700,

@@ -97,10 +97,7 @@ class _DisplayBudgetState extends State<DisplayBudget> {
   }
 
   String _formatCurrency(double val) {
-    if (val == val.toInt()) {
-      return '\$${val.toInt().toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
-    }
-    return '\$${val.toStringAsFixed(2).replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}';
+    return formatCurrency(val);
   }
 
   @override
